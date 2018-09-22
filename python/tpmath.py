@@ -1,6 +1,14 @@
+"""Useful Mathematical Utilities for PyTecplot
+
+This file contains functions we have found to be useful across multiple
+scripts that are mathematical or computational in nature. It is meant to
+be imported into a running python script with ``import tpmath``.
+"""
 import tecplot as tp
 
-def chunks(l,n):
+
+def chunks(l, n):
+    """Iterate over ``l`` in chunks of size ``n``"""
     for i in range(0, len(l), n):
         yield l[i:i+n]
 
@@ -23,7 +31,7 @@ def compute_sum(variable, source_zones, dest_zone, chunk_size=50):
             equation += " + {%s}[%d]"%(variable.name, zone_num)
         tp.data.operate.execute_equation(equation, zones=[dest_zone])
 
-        
+
 #
 # Computes the average of the supplied zones for each variable supplied. Each
 # zone must have the same number of points.
@@ -34,7 +42,7 @@ def compute_sum(variable, source_zones, dest_zone, chunk_size=50):
 #
 # source_zones - the set of zones to use for computing the average
 # variables_to_average - the variables for which to average
-# constant_variables - any variables that are constant across the set 
+# constant_variables - any variables that are constant across the set
 #   of source_zones. Often these are X,Y,Z variables.
 #
 def compute_average(source_zones, variables_to_average, constant_variables=None):
@@ -64,5 +72,5 @@ def compute_average(source_zones, variables_to_average, constant_variables=None)
             # no way to convert a variable to passive.
             tp.data.operate.execute_equation("{%s} = 0"%(v.name), zones=[avg_zone])
     return avg_zone
-        
+
 

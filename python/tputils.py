@@ -1,3 +1,17 @@
+"""Generic PyTecplot Utilities
+
+These are some generic functions that we have found useful across several
+applications when using PyTecplot in either batch or connected mode. This
+file is meant to be imported as a Python module as in this example where we
+attach the dataset of the active frame a newly created frame:
+
+    >>> import tecplot as tp
+    >>> import tputils
+    >>> frame = tp.active_frame()
+    >>> new_frame = tp.active_page().add_frame()
+    >>> tputils.attach_dataset(new_frame, frame.dataset)
+
+"""
 import ctypes
 
 import tecplot as tp
