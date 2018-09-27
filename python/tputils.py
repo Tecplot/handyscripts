@@ -60,7 +60,8 @@ def get_zones_by_strand(dataset):
     This example shows getting all the zones associated with ``strand == 3``:
 
         >>> import tecplot as tp
-        >>> zones_by_strand = get_zones_by_strand(tp.active_frame().dataset)
+        >>> import tputils
+        >>> zones_by_strand = tputils.get_zones_by_strand(tp.active_frame().dataset)
         >>> zones = zones_by_strand[3]
     """
     zones_by_strand = {}
