@@ -69,7 +69,7 @@ def get_zones_by_strand(dataset):
         if strand > 0:
             if strand not in zones_by_strand:
                 zones_by_strand[strand] = []
-            zones_by_strand.append(z)
+            zones_by_strand[strand].append(z)
     return zones_by_strand
 
 
