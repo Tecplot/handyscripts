@@ -1,28 +1,28 @@
 ########################################################
 #
 #  This PyTecplot script extracts values from surface zones at given
-#  slice locations defined by origin and normal. Slice locations in the 
+#  slice locations defined by origin and normal. Slice locations in the
 #  input section were extracted from HiLiftPW-3.JSM.SectionalCutter_v2.mcr
-#  and HiLiftPW-3.HLCRM-SectionalCutter_v2.mcr for the two models. 
+#  and HiLiftPW-3.HLCRM-SectionalCutter_v2.mcr for the two models.
 #
-#  Command line input: 
+#  Command line input:
 #    Model: "JSM" or "HLCRM" or "OneraM6"
 #    List of files with .cgns, or Tecplot formats .dat, .plt or .szplt
 #    A sample file: Tecplot 360 EX/Examples/OneraM6wing/OneraM6_SU2_RANS.plt
 #    Example: python -O sectional_extract.py JSM my_jsm_solution.cgns another_jsm_solution.szplt
 #
-#  Additional input: 
-#    Variable name: (lists) variables are matched by name. Add variable names 
-#      as exported by solvers used. 
+#  Additional input:
+#    Variable name: (lists) variables are matched by name. Add variable names
+#      as exported by solvers used.
 #    Sectional cuts: (dictionary) slice name, origin and normal
-#      as defined in HiLiftPW-3.JSM.SectionalCutter_v2.mcr and 
+#      as defined in HiLiftPW-3.JSM.SectionalCutter_v2.mcr and
 #      HiLiftPW-3.HLCRM-SectionalCutter_v2.mcr
 #
-#  Output: 
-#     Tecplot ASCII (.dat) file extracted at defined X,Y location. 
-#     The output file will have variables which match names given in 
+#  Output:
+#     Tecplot ASCII (.dat) file extracted at defined X,Y location.
+#     The output file will have variables which match names given in
 #       additonal input
-#     
+#
 ########################################################
 
 import sys
@@ -30,24 +30,24 @@ import os
 import tecplot as tp
 
 ################# INPUT ###########################
-if len(sys.argv) > 2: 
+if len(sys.argv) > 2:
     model = sys.argv[1]
     files = sys.argv[2:]
-else: 
+else:
     raise Exception("Please supply filenames.")
 
 # Variable alias lists - update if your solver outputs different names
 x_variable_names = ['x', 'CoordinateX']
 y_variable_names = ['y', 'CoordinateY']
 z_variable_names = ['z', 'CoordinateZ']
-cp_variable_names = ['cp', 'Coefficient Pressure','Pressure Coefficient', 
+cp_variable_names = ['cp', 'Coefficient Pressure','Pressure Coefficient',
                      'C<sub>p</sub>', 'Pressure_Coefficient']
 cf_variable_names = ['cf', 'Force Coefficient', 'Skin_Friction_Coefficient']
 cfx_variable_names = ['cfx', 'Force Coefficient X']
 cfy_variable_names = ['cfy', 'Force Coefficient Y']
 cfz_variable_names = ['cfz', 'Force Coefficient Z']
 
-variable_aliases = [x_variable_names, y_variable_names, z_variable_names, cp_variable_names, 
+variable_aliases = [x_variable_names, y_variable_names, z_variable_names, cp_variable_names,
              cf_variable_names, cfx_variable_names, cfy_variable_names, cfz_variable_names]
 
 if model == 'JSM':
@@ -72,23 +72,23 @@ if model == 'JSM':
                       " slatH-H eta=0.89" :[[2.97876E+03, -2.07116E+03, -4.79897E+01],[0.055020, -0.976978, -0.206122]],
                       " wingH-H eta=0.89" :[[3.24813E+03, -2.04704E+03, -5.71650E+01],[0.000000, -0.998630,  0.052336]],
                       " fuselageN-N X=2504.88" :[[2.50488E+03, -4.59483E+01,  2.60586E+02],[1.000000,  0.000000,  0.000000]]}
-elif model == 'HLCRM': 
+elif model == 'HLCRM':
     # Python dict of section name, origin and normal (Taken from HiLiftPW-3.HLCRM.SectionalCutter_v2.mcr (updated 03/29/2017))
     sectional_cuts = {" eta=0.151, y=174.5" :[[0., 174.5, 0.],[ 0., 1., 0.]],
                       " eta=0.240, y=277.5" :[[0., 277.5, 0.],[ 0., 1., 0.]],
                       " eta=0.329, y=380.5" :[[0., 380.5, 0.],[ 0., 1., 0.]],
-                      " eta=0.418, y=483.5" :[[0., 483.5, 0.],[ 0., 1., 0.]], 
+                      " eta=0.418, y=483.5" :[[0., 483.5, 0.],[ 0., 1., 0.]],
                       " eta=0.552, y=638"   :[[0., 638.0, 0.],[ 0., 1., 0.]],
                       " eta=0.685, y=792.5" :[[0., 792.5, 0.],[ 0., 1., 0.]],
                       " eta=0.819, y=947"   :[[0., 947.0, 0.],[ 0., 1., 0.]],
                       " eta=0.908, y=1050"  :[[0.,1050.0, 0.],[ 0., 1., 0.]]}
 elif model == 'OneraM6':
-    # Arbitrary cut locations for testing with the OneraM6 wing 
+    # Arbitrary cut locations for testing with the OneraM6 wing
     sectional_cuts = {" eta=0.151, y=0.20" :[[0., 0.20, 0.],[ 0., 1., 0.]],
                       " eta=0.240, y=0.44" :[[0., 0.44, 0.],[ 0., 1., 0.]],
                       " eta=0.329, y=0.65" :[[0., 0.65, 0.],[ 0., 1., 0.]],
-                      " eta=0.418, y=0.80" :[[0., 0.80, 0.],[ 0., 1., 0.]]}    
-else: 
+                      " eta=0.418, y=0.80" :[[0., 0.80, 0.],[ 0., 1., 0.]]}
+else:
     raise Exception('Please select model as JSM or HLCRM')
 ####################################################
 
@@ -96,63 +96,63 @@ else:
 
 def load_by_extension(filename):
     # Load any file with .cgns, .dat, .plt or .szplt file extension
-    # Note: Sample loaders are provided here and additional loaders 
-    #   can be added using macro language. 
-    
+    # Note: Sample loaders are provided here and additional loaders
+    #   can be added using macro language.
+
     basename, ext = os.path.splitext(filename)
     if ext == '.cgns':
         # Load file with CGNS loader
         ds = tp.data.load_cgns(filename, include_boundary_conditions=True)
-    elif ext in ['.dat', '.plt']: 
+    elif ext in ['.dat', '.plt']:
         # Load file with Tecplot loader
         ds = tp.data.load_tecplot(filename)
-    elif ext == '.szplt': 
+    elif ext == '.szplt':
         # Load file with Tecplot SZL loader
-        ds = tp.data.load_tecplot_szl(filename)        
-    else: 
+        ds = tp.data.load_tecplot_szl(filename)
+    else:
         raise Exception('Not recognized data extension')
     return ds
 
 
 
-def variable_by_names(ds,variable_names): 
+def variable_by_names(ds,variable_names):
     # Returns a PyTecplot variable object with name that matches any name in variable_names
-    for var in ds.variables(): 
-        if var.name in variable_names: 
+    for var in ds.variables():
+        if var.name in variable_names:
             return var
     return 'No variable found for: {0}'.format(str(variable_names))
 
 
-for fname in files: 
+for fname in files:
     tp.new_layout()
     basename = os.path.splitext(fname)[0]
     # Load file and ensure 3D plot type
     ds = load_by_extension(fname)
     tp.active_frame().plot_type = tp.constant.PlotType.Cartesian3D
     plot = tp.active_frame().plot()
-    
+
     extracted_zones = []
 
     for sect_name in sectional_cuts.keys():
         location = sectional_cuts[sect_name]
         # Extract from surface at given origin and normal
         wing_cut = tp.data.extract.extract_slice(origin= location[0],
-                                                 normal= location[1], 
+                                                 normal= location[1],
                                                  source= tp.constant.SliceSource.SurfaceZones)
         # Name extracted zone
         wing_cut.name = basename + sect_name
         extracted_zones.append(wing_cut)
-        
+
     exported_variables = []
     # For variables, find variable objects to write out only those of interest
-    for varnames in variable_aliases: 
+    for varnames in variable_aliases:
         var_obj=variable_by_names(ds, varnames)
-        if isinstance(var_obj, tp.data.variable.Variable): 
+        if isinstance(var_obj, tp.data.variable.Variable):
             exported_variables.append(var_obj)
         else:
             print(str(var_obj))
-        
-    tp.data.save_tecplot_ascii(basename + "_sectional.dat", 
-                               zones=extracted_zones, 
+
+    tp.data.save_tecplot_ascii(basename + "_sectional.dat",
+                               zones=extracted_zones,
                                variables=exported_variables,
                                use_point_format=True)

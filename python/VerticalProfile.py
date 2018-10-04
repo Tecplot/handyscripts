@@ -5,13 +5,14 @@ import tputils
 
 tp.session.connect()
 
-def extract_vertical_line(x,y,source_fieldmap,plot):
+
+def extract_vertical_line(x, y, source_fieldmap, plot):
     tp.macro.execute_command("$!ActiveFieldMaps = [{}]".format(source_fieldmap))
     x_slice = tp.data.extract.extract_slice(
         origin=(x, 0, 0),
         normal=(1, 0, 0),
         source=SliceSource.VolumeZones)
-    tp.macro.execute_command("$!ActiveFieldMaps = [{}]".format(plot.fieldmap(x_slice).index+1))
+    tp.macro.execute_command("$!ActiveFieldMaps = [{}]".format(plot.fieldmap(x_slice).index + 1))
     result = tp.data.extract.extract_slice(
         origin=(0, y, 0),
         normal=(0, 1, 0),
@@ -29,14 +30,14 @@ def plot_vertical_profile(zone, xvar, yvar):
     for f in plot.fieldmaps():
         f.show = False
     fmap.show = True
-    plot.show_mesh=True
-    plot.show_shade=False
-    plot.show_contour=False
-    plot.show_scatter=True
+    plot.show_mesh = True
+    plot.show_shade = False
+    plot.show_contour = False
+    plot.show_scatter = True
     fmap.scatter.symbol().shape = GeomShape.Circle
     plot.axes.x_axis.variable = xvar
     plot.axes.y_axis.variable = yvar
-    plot.axes.axis_mode=AxisMode.Independent
+    plot.axes.axis_mode = AxisMode.Independent
     # Fit the data first to get the ranges reasonable, then fine tune
     plot.view.fit()
     x_minmax = tputils.fieldmap_minmax(fmap, xvar)
@@ -47,11 +48,12 @@ def plot_vertical_profile(zone, xvar, yvar):
     plot.axes.y_axis.max = y_minmax[1]
 
     tp.macro.execute_command('$!Linking BetweenFrames{LinkSolutionTime = Yes}')
-    tp.macro.execute_command('''$!PropagateLinking 
-      LinkType = BetweenFrames
-      FrameCollection = All''')
-    #tp.macro.execute_extended_command(command_processor_id='Multi Frame Manager',
+    tp.macro.execute_command('''$!PropagateLinking
+        LinkType = BetweenFrames
+        FrameCollection = All''')
+    # tp.macro.execute_extended_command(command_processor_id='Multi Frame Manager',
     #    command='TILEFRAMESVERT')
+
 
 frame = tp.active_frame()
 threed_plot = tp.active_frame().plot(PlotType.Cartesian3D)
@@ -71,7 +73,7 @@ with tp.session.suspend():
         result = extract_vertical_line(x, y, source_fieldmap, threed_plot)
         result.strand = new_strand
         result.solution_time = t
-        print("Made vertical profile for t={} in {} seconds".format(t, time.time()-start))
+        print("Made vertical profile for t={} in {} seconds".format(t, time.time() - start))
 
     threed_plot.active_fieldmap_indices = active_fieldmap_indices
 
