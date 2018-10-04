@@ -10,7 +10,7 @@ import tecplot as tp
 def chunks(l, n):
     """Iterate over ``l`` in chunks of size ``n``"""
     for i in range(0, len(l), n):
-        yield l[i:i+n]
+        yield l[i:i + n]
 
 #
 # Computes the sum of the specified variable for the source_zones and
@@ -19,16 +19,18 @@ def chunks(l, n):
 #
 # All source zones must have the same number of nodes
 #
+
+
 def compute_sum(variable, source_zones, dest_zone, chunk_size=50):
     # Tecplot equation syntax has a length limit, so we chunk the summation to ensure
     # that we don't overflow that length limit.  In testing the limit is ~300 zones, but
     # it depends on the length of the variable name as well.
-    tp.data.operate.execute_equation("{%s} = 0"%(variable.name), zones=[dest_zone])
+    tp.data.operate.execute_equation("{%s} = 0" % (variable.name), zones=[dest_zone])
     for zones in chunks(source_zones, chunk_size):
-        equation = "{%s} = {%s}"%(variable.name, variable.name)
+        equation = "{%s} = {%s}" % (variable.name, variable.name)
         for z in zones:
-            zone_num = z.index+1 # Adding 1 because execute equation uses 1-based zone indices
-            equation += " + {%s}[%d]"%(variable.name, zone_num)
+            zone_num = z.index + 1  # Adding 1 because execute equation uses 1-based zone indices
+            equation += " + {%s}[%d]" % (variable.name, zone_num)
         tp.data.operate.execute_equation(equation, zones=[dest_zone])
 
 

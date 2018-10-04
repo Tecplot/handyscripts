@@ -12,13 +12,14 @@ tp.macro.execute_command("""$!ReadDataSet  '\"C:\\Program Files\\Tecplot\\Tecplo
     VarLoadMode = ByName
     AssignStrandIDs = Yes
     VarNameList = '\"X(M)\" \"Y(M)\" \"U(M/S)\" \"V(M/S)\" \"W(M/S)\" \"P(N/M2)\" \"T(K)\" \"R(KG/M3)\"'""")
-tp.macro.execute_command('''$!Pick SetMouseMode
-    MouseMode = Select''')
-cmd = '''$!AttachGeom
+tp.macro.execute_command("""$!Pick SetMouseMode
+    MouseMode = Select""")
+
+cmd = """$!AttachGeom
     PositionCoordsys = FRAME
     RawData
     1
-'''
+"""
 idxs = ""
 count = 0
 for i in range(10, 100, 1):
@@ -30,14 +31,14 @@ cmd += str(count) + '\n' + idxs
 print(cmd)
 tp.macro.execute_command(cmd)
 
-tp.macro.execute_command('''$!Pick AddAll
-    SELECTGEOMS=YES''')
-tp.macro.execute_command('''$!ExtractFromGeom
+tp.macro.execute_command("""$!Pick AddAll
+    SELECTGEOMS=YES""")
+tp.macro.execute_command("""$!ExtractFromGeom
     ExtractLinePointsOnly = Yes
     IncludeDistanceVar = No
     NumPts = 200
-    ExtractToFile = No''')
-# tp.macro.execute_command('''$!Pick Clear''')
+    ExtractToFile = No""")
+tp.macro.execute_command("""$!Pick Clear""")
 
 tp.active_frame().plot().fieldmap(0).vector.show = False
 tp.active_frame().plot(PlotType.Cartesian2D).vector.u_variable_index = 2
