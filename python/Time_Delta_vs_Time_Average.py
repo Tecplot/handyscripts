@@ -6,12 +6,15 @@ import time
 
 tp.session.connect()
 
-#variables_to_average = dataset.variables()
-#constant_variables = None
 plot = tp.active_frame().plot()
 dataset = tp.active_frame().dataset
-variables_to_average = [dataset.variable("Pressure Coefficient")]
-constant_variables = [plot.axes.x_axis.variable, plot.axes.y_axis.variable, plot.axes.z_axis.variable]
+# Must use a list, because we use this twice - the generator is empty the second time around
+variables_to_average = list(dataset.variables())
+constant_variables = None
+# If you're only interested in a subset of variables, you can supply them like this
+##variables_to_average = [dataset.variable("Pressure Coefficient")]
+# Variables which are known to be constant can be supplied here - saving computation time
+##constant_variables = [plot.axes.x_axis.variable, plot.axes.y_axis.variable, plot.axes.z_axis.variable]
 
 start = time.time()
 with tp.session.suspend():
@@ -28,6 +31,7 @@ with tp.session.suspend():
         now = time.time()
         avg_zone = tpmath.compute_average(source_zones, variables_to_average, constant_variables)
         print("Time to compute average for strand {}: {}".format(strand, time.time()-now))
+        print("AvgZone is: ", avg_zone.name)
 
         # Create Delta variables for each variable we averaged. The resulting Delta variable
         # is created for each source zone.
