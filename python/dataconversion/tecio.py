@@ -4,6 +4,22 @@ import sys
 
 tecio = ctypes.cdll.LoadLibrary(r"C:\Program Files\Tecplot\Tecplot 360 EX Beta\bin\tecio.dll")
 
+# Constants
+VALUELOCATION_CELLCENTERED = 0
+VALUELOCATION_NODECENTERED = 1
+
+VARSTATUS_ACTIVE  = 0
+VARSTATUS_PASSIVE = 1
+
+ZONETYPE_ORDERED = 0
+ZONETYPE_FELINESEG = 1
+ZONETYPE_FETRIANGLE = 2
+ZONETYPE_FEQUADRILATERAL = 3
+ZONETYPE_FETETRAHEDRON = 4
+ZONETYPE_FEBRICK = 5
+ZONETYPE_FEPOLYGON = 6
+ZONETYPE_FEPOLYHEDRON = 7
+
 def open_file(file_name, dataset_title, var_names, use_double_precision=False):
     tecio.tecini142.restype=ctypes.c_int32
     tecio.tecini142.argtypes=(
@@ -48,7 +64,24 @@ def close_file():
         raise Exception("close_file Error")
     return ret
 
-def create_ordered_zone(zone_name, shape, solution_time, strand, var_sharing=None, passive_vars=None):
+def teczne(
+    zone_name,
+    zone_type,
+    imax,
+    jmax,
+    kmax,
+    solution_time = 0,
+    strand = 0,
+    parent_zone = 0,
+    num_face_connections = 0,
+    face_neighbor_mode = 0,
+    total_num_face_nodes = 0,
+    num_connected_boundary_faces = int(0),
+    total_num_boundary_connections = int(0),
+    var_sharing = None,
+    passive_vars = None,
+    value_locations = None):
+
     tecio.teczne142.restype=ctypes.c_int32
     tecio.teczne142.argtypes=(
             ctypes.c_char_p, # ZoneTitle
@@ -73,25 +106,28 @@ def create_ordered_zone(zone_name, shape, solution_time, strand, var_sharing=Non
             ctypes.POINTER(ctypes.c_int32), # ShareVarFromZone
             ctypes.POINTER(ctypes.c_int32)) # ShareConnectivityFromZone
 
+    zone_type = ctypes.c_int32(zone_type)
+    imax = ctypes.c_int32(imax)
+    jmax = ctypes.c_int32(jmax)
+    kmax = ctypes.c_int32(kmax)
+    parent_zone = ctypes.c_int32(parent_zone)
+    ignored = ctypes.c_int32(0)
+    block_format = ctypes.c_int32(1)
+    num_face_connections = ctypes.c_int32(num_face_connections)
+    face_neighbor_mode = ctypes.c_int32(face_neighbor_mode)
+    total_num_face_nodes = ctypes.c_int32(total_num_face_nodes)
+    num_connected_boundary_faces = ctypes.c_int32(num_connected_boundary_faces)
+    total_num_boundary_connections = ctypes.c_int32(total_num_boundary_connections)
+
     passive_var_list = None
     if passive_vars:
         passive_var_list = (ctypes.c_int32*len(passive_vars))(*passive_vars)
     var_share_list = None
     if var_sharing:
         var_share_list = (ctypes.c_int32*len(var_sharing))(*var_sharing)
-
-    zone_type = ctypes.c_int32(0) # Ordered
-    imax = ctypes.c_int32(shape[0])
-    jmax = ctypes.c_int32(shape[1])
-    kmax = ctypes.c_int32(shape[2])
-    parent_zone = ctypes.c_int32(0)
-    ignored = ctypes.c_int32(0)
-    block_format = ctypes.c_int32(1)
-    num_face_connections = ctypes.c_int32(0)
-    face_neighbor_mode = ctypes.c_int32(0)
-    total_num_face_nodes = ctypes.c_int32(0)
-    num_connected_boundary_faces = ctypes.c_int32(0)
-    total_num_boundary_connections = ctypes.c_int32(0)
+    value_location_list = None
+    if value_locations:
+        value_location_list = (ctypes.c_int32*len(value_locations))(*value_locations)
 
     ret = tecio.teczne142(
             ctypes.c_char_p(bytes(zone_name, encoding="UTF-8")),
@@ -112,84 +148,70 @@ def create_ordered_zone(zone_name, shape, solution_time, strand, var_sharing=Non
             ctypes.byref(num_connected_boundary_faces), # only applies to poly data
             ctypes.byref(total_num_boundary_connections), # only applies to poly data
             passive_var_list,
-            None, # Value Location - None indicates nodal data
+            value_location_list,
             var_share_list,
             ctypes.byref(ctypes.c_int32(0))) #ShareConnectivityFromZone
+    return ret
+
+def create_ordered_zone(
+    zone_name,
+    shape,
+    solution_time=0,
+    strand=0,
+    var_sharing=None,
+    passive_vars=None,
+    value_locations=None):
+
+    zone_type = ZONETYPE_ORDERED
+    imax,jmax,kmax = shape
+
+    ret = teczne(
+            zone_name = zone_name,
+            zone_type = zone_type,
+            imax=shape[0],
+            jmax=shape[1],
+            kmax=shape[2],
+            solution_time = solution_time,
+            strand = strand,
+            var_sharing = var_sharing,
+            passive_vars = passive_vars,
+            value_locations = value_locations)
     if ret != 0:
         raise Exception("create_ordered_zone Error")
     return ret
 
-def create_polyhedral_zone(zone_name, num_nodes, num_elements, num_faces, total_num_face_nodes, num_connected_boundary_faces, total_num_boundary_connections, solution_time, strand, var_sharing=None, passive_vars=None):
-    tecio.teczne142.restype=ctypes.c_int32
-    tecio.teczne142.argtypes=(
-            ctypes.c_char_p, # ZoneTitle
-            ctypes.POINTER(ctypes.c_int32), # ZoneType
-            ctypes.POINTER(ctypes.c_int32), # IMax
-            ctypes.POINTER(ctypes.c_int32), # JMax
-            ctypes.POINTER(ctypes.c_int32), # KMax
-            ctypes.POINTER(ctypes.c_int32), # ICellMax - Unused
-            ctypes.POINTER(ctypes.c_int32), # JCellMax - Unused
-            ctypes.POINTER(ctypes.c_int32), # KCellMax - Unused
-            ctypes.POINTER(ctypes.c_double), # SolutionTime
-            ctypes.POINTER(ctypes.c_int32), # StrandID
-            ctypes.POINTER(ctypes.c_int32), # ParentZone
-            ctypes.POINTER(ctypes.c_int32), # IsBlock
-            ctypes.POINTER(ctypes.c_int32), # NumFaceConnections - Unused
-            ctypes.POINTER(ctypes.c_int32), # FaceNeighborMode
-            ctypes.POINTER(ctypes.c_int32), # TotalNumFaceNodes
-            ctypes.POINTER(ctypes.c_int32), # NumConnectedBoundaryFaces
-            ctypes.POINTER(ctypes.c_int32), # TotalNumBoundaryConnections
-            ctypes.POINTER(ctypes.c_int32), # PassiveVarList
-            ctypes.POINTER(ctypes.c_int32), # ValueLocation
-            ctypes.POINTER(ctypes.c_int32), # ShareVarFromZone
-            ctypes.POINTER(ctypes.c_int32)) # ShareConnectivityFromZone
+def create_poly_zone(
+    zone_name,
+    zone_type,
+    num_nodes,
+    num_elements,
+    num_faces,
+    total_num_face_nodes,
+    num_connected_boundary_faces=0,
+    total_num_boundary_connections=0,
+    solution_time=0,
+    strand=0,
+    var_sharing=None,
+    passive_vars=None,
+    value_locations=None):
 
-    passive_var_list = None
-    if passive_vars:
-        passive_var_list = (ctypes.c_int32*len(passive_vars))(*passive_vars)
-    var_share_list = None
-    if var_sharing:
-        var_share_list = (ctypes.c_int32*len(var_sharing))(*var_sharing)
-
-    zone_type = ctypes.c_int32(7) # Polyhedron Zone
-    imax = ctypes.c_int32(num_nodes)
-    jmax = ctypes.c_int32(num_elements)
-    kmax = ctypes.c_int32(num_faces)
-    parent_zone = ctypes.c_int32(0)
-    ignored = ctypes.c_int32(0)
-    block_format = ctypes.c_int32(1)
-    num_face_connections = ctypes.c_int32(0)
-    face_neighbor_mode = ctypes.c_int32(0)
-    total_num_face_nodes = ctypes.c_int32(total_num_face_nodes)
-    num_connected_boundary_faces = ctypes.c_int32(num_connected_boundary_faces)
-    total_num_boundary_connections = ctypes.c_int32(total_num_boundary_connections)
-    print("num_connected_boundary_faces: ", num_connected_boundary_faces)
-    print("total_num_boundary_connections: ", total_num_boundary_connections)
-
-    ret = tecio.teczne142(
-            ctypes.c_char_p(bytes(zone_name, encoding="UTF-8")),
-            ctypes.byref(zone_type),
-            ctypes.byref(imax),
-            ctypes.byref(jmax),
-            ctypes.byref(kmax),
-            ctypes.byref(ignored),
-            ctypes.byref(ignored),
-            ctypes.byref(ignored),
-            ctypes.byref(ctypes.c_double(solution_time)),
-            ctypes.byref(ctypes.c_int32(strand)),
-            ctypes.byref(parent_zone),
-            ctypes.byref(block_format),
-            ctypes.byref(num_face_connections),
-            ctypes.byref(face_neighbor_mode),
-            ctypes.byref(total_num_face_nodes), # only applies to poly data
-            ctypes.byref(num_connected_boundary_faces), # only applies to poly data
-            ctypes.byref(total_num_boundary_connections), # only applies to poly data
-            passive_var_list,
-            None, # Value Location - None indicates nodal data
-            var_share_list,
-            ctypes.byref(ctypes.c_int32(0))) #ShareConnectivityFromZone
+    assert(zone_type == ZONETYPE_FEPOLYGON or zone_type == ZONETYPE_FEPOLYHEDRON)
+    ret = teczne(
+            zone_name = zone_name,
+            zone_type = zone_type,
+            imax = num_nodes,
+            jmax = num_elements,
+            kmax = num_faces,
+            solution_time = solution_time,
+            strand = strand,
+            total_num_face_nodes = total_num_face_nodes,
+            num_connected_boundary_faces = num_connected_boundary_faces,
+            total_num_boundary_connections = total_num_boundary_connections,
+            var_sharing = var_sharing,
+            passive_vars = passive_vars,
+            value_locations = value_locations)
     if ret != 0:
-        raise Exception("create_polyhedral_zone Error")
+        raise Exception("create_poly_zone Error")
     return ret
 
 def tecpolyface(num_faces, face_node_counts, face_nodes, face_left_elems, face_right_elems):
@@ -201,13 +223,17 @@ def tecpolyface(num_faces, face_node_counts, face_nodes, face_left_elems, face_r
             ctypes.POINTER(ctypes.c_int32), # Face Left Elems array
             ctypes.POINTER(ctypes.c_int32)) # Face Right Elems array
 
-    face_node_counts = np.asarray(face_node_counts,dtype=np.int32)
+    face_node_count_array = None
+    if face_node_counts:
+        face_node_counts = np.asarray(face_node_counts,dtype=np.int32)
+        face_node_count_array = ctypes.cast(face_node_counts.ctypes.data, ctypes.POINTER(ctypes.c_int32))
+
     face_nodes = np.asarray(face_nodes,dtype=np.int32)
     face_left_elems = np.asarray(face_left_elems,dtype=np.int32)
     face_right_elems = np.asarray(face_right_elems,dtype=np.int32)
     ret = tecio.tecpolyface142(
             ctypes.byref(ctypes.c_int32(num_faces)),
-            ctypes.cast(face_node_counts.ctypes.data, ctypes.POINTER(ctypes.c_int32)),
+            face_node_count_array, #ctypes.cast(face_node_counts.ctypes.data, ctypes.POINTER(ctypes.c_int32)),
             ctypes.cast(face_nodes.ctypes.data, ctypes.POINTER(ctypes.c_int32)),
             ctypes.cast(face_left_elems.ctypes.data, ctypes.POINTER(ctypes.c_int32)),
             ctypes.cast(face_right_elems.ctypes.data, ctypes.POINTER(ctypes.c_int32)))
@@ -255,14 +281,70 @@ def zone_write_values(values):
 
 def test_ordered(file_name, use_double):
     open_file(file_name, "Title", ['x','y','c'], use_double)
-    create_ordered_zone("Zone", (3,3,1), 0, 0)
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_CELLCENTERED] # 'c'
+    # Use default values for non-positional arguments (like strand, solution_time, etc)
+    create_ordered_zone("Zone", (3,3,1), value_locations=value_locations)
     zone_write_values([1,2,3,1,2,3,1,2,3]) #xvals
     zone_write_values([1,1,1,2,2,2,3,3,3]) #yvals
-    zone_write_values([1,2,3,4,5,6,7,8,9]) #cvals
+    # 3x3 zone has 4 elements
+    zone_write_values([1,2,3,4]) #cvals
     close_file()
     
-def test_polyhedral(file_name, use_double):
-    open_file(file_name, "Title", ['x','y','z'], use_double)
+def test_polygon(file_name, use_double):
+    open_file(file_name, "Title", ['x','y','c'], use_double)
+
+    # Create two triangle polygon cells
+    num_nodes = 4
+    num_elements = 2
+    num_faces = 5
+    total_num_face_nodes = 2 * num_faces
+    
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_CELLCENTERED] # 'c'
+
+    create_poly_zone(
+        "Zone", #zone_name
+        ZONETYPE_FEPOLYGON,
+        num_nodes,
+        num_elements,
+        num_faces,
+        total_num_face_nodes,
+        value_locations=value_locations) # value_locations
+    
+    zone_pts = [
+        0,0,    # cell 1
+        1,0,    # cell 1 & 2
+        0.5,1,  # cell 1 & 2
+        1.5,0.5]# cell 2
+
+    x_pts = zone_pts[0::2]
+    y_pts = zone_pts[1::2]
+    zone_write_values(x_pts)
+    zone_write_values(y_pts)
+    zone_write_values([1,2]) # 'c' has two cell centered values
+
+    face_nodes = [
+        2,1, # Face 1
+        1,3, # Face 2
+        3,2, # Face 3
+        3,4, # Face 4
+        4,2, # Face 5
+    ]
+    assert(len(face_nodes) == total_num_face_nodes)
+
+    left_elems = [0,0,2,0,0]
+    right_elems = [1,1,1,2,2]
+    # Negative values in the element arrays indicate a connection to an element in another zone
+    tecpolyface(num_faces, None, face_nodes, left_elems, right_elems)
+    close_file()
+
+def test_polyhedron(file_name, use_double):
+    open_file(file_name, "Title", ['x','y','z','c'], use_double)
 
     # Create a brick-like polyhedral zone 
     num_nodes = 8
@@ -272,18 +354,20 @@ def test_polyhedral(file_name, use_double):
     face_node_counts = [4] * 6 # 6 faces with 4 nodes per face
     assert(len(face_node_counts) == num_faces)
     
-    create_polyhedral_zone(
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_NODECENTERED, # 'z'
+        VALUELOCATION_CELLCENTERED] # 'c'
+
+    create_poly_zone(
         "Zone", #zone_name
+        ZONETYPE_FEPOLYHEDRON,
         num_nodes,
         num_elements,
         num_faces,
         total_num_face_nodes,
-        0,  # num_connected_boundary_faces
-        0,  # total_num_boundary_connections
-        0,  # solution_time
-        0,  # strand
-        None, # var_sharing
-        None) # passive_vars
+        value_locations=value_locations) # value_locations
     
     rect_pts = [
         0,3,0, # XYZ
@@ -300,6 +384,7 @@ def test_polyhedral(file_name, use_double):
     zone_write_values(x_pts)
     zone_write_values(y_pts)
     zone_write_values(z_pts)
+    zone_write_values([3]) # 'c' has only one cell centered value
 
     face_nodes = [
         1,2,3,4, # Face 1
@@ -318,11 +403,14 @@ def test_polyhedral(file_name, use_double):
         
     close_file()
 
-if "--testpoly" in sys.argv:
-    test_polyhedral("test_poly.plt", False)
+if "--testpolygon" in sys.argv:
+    test_polygon("test_polygon.plt", False)
 
-if "--test" in sys.argv:
-    test_ordered("test_double.plt", True)
-    test_ordered("test_float.plt", False)
-    test_ordered("test_double.szplt", True)
-    test_ordered("test_float.szplt", False)
+if "--testpolyhedron" in sys.argv:
+    test_polyhedron("test_polyhedron.plt", False)
+
+if "--testordered" in sys.argv:
+    test_ordered("test_ordered_double.plt", True)
+    test_ordered("test_ordered_float.plt", False)
+    test_ordered("test_ordered_double.szplt", True)
+    test_ordered("test_ordered_float.szplt", False)
