@@ -20,7 +20,17 @@ ZONETYPE_FEBRICK = 5
 ZONETYPE_FEPOLYGON = 6
 ZONETYPE_FEPOLYHEDRON = 7
 
-def open_file(file_name, dataset_title, var_names, use_double_precision=False):
+FILETYPE_GRIDANDSOLUTION = 0
+FILETYPE_GRID = 1
+FILETYPE_SOLUTION = 2
+
+def open_file(
+    file_name,
+    dataset_title,
+    var_names,
+    use_double_precision=False,
+    file_type=FILETYPE_GRIDANDSOLUTION):
+
     tecio.tecini142.restype=ctypes.c_int32
     tecio.tecini142.argtypes=(
             ctypes.c_char_p, #Title
@@ -37,7 +47,7 @@ def open_file(file_name, dataset_title, var_names, use_double_precision=False):
     varnamelist = ",".join(var_names)
     scratch_dir = r"."
     fileformat = ctypes.c_int32(1 if is_szl else 0) # 0=PLT, 1=SZL
-    filetype = ctypes.c_int32(0) # 0=Grid&Solution, 1=Grid, 2=Solution
+    filetype = ctypes.c_int32(file_type) # 0=Grid&Solution, 1=Grid, 2=Solution
     debug = ctypes.c_int32(0) # 0=No, 1=Yes
     isdouble = ctypes.c_int32(1 if use_double_precision else 0) # 0=float, 1=double
     ret = tecio.tecini142(
@@ -402,6 +412,26 @@ def test_polyhedron(file_name, use_double):
     tecpolyface(num_faces, face_node_counts, face_nodes, left_elems, right_elems)
         
     close_file()
+
+def test_gridandsolution(grid_file, solution_file):
+    open_file(grid_file, "Title", ['x','y'], file_type = FILETYPE_GRID)
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED] # 'y'
+    create_ordered_zone("Zone", (3,3,1), strand=1, value_locations=value_locations)
+    zone_write_values([1,2,3,1,2,3,1,2,3]) #xvals
+    zone_write_values([1,1,1,2,2,2,3,3,3]) #yvals
+    close_file()
+
+    for t in [1,2,3]:
+        open_file("t={}_{}".format(t, solution_file), "Title", ['c'], file_type=FILETYPE_SOLUTION)
+        value_locations = [VALUELOCATION_CELLCENTERED] # 'c'
+        create_ordered_zone("Zone", (3,3,1), solution_time=t, strand=1, value_locations=value_locations)
+        zone_write_values([t*1,t*2,t*3,t*4]) #cvals
+        close_file()
+
+if "--testgridandsolution" in sys.argv:
+    test_gridandsolution("grid.plt", "solution.plt")
 
 if "--testpolygon" in sys.argv:
     test_polygon("test_polygon.plt", False)
