@@ -432,6 +432,7 @@ def test_gridandsolution(grid_file, solution_file):
 
 if "--testgridandsolution" in sys.argv:
     test_gridandsolution("grid.plt", "solution.plt")
+    test_gridandsolution("grid.szplt", "solution.szplt")
 
 if "--testpolygon" in sys.argv:
     test_polygon("test_polygon.plt", False)
