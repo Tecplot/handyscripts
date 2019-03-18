@@ -251,7 +251,7 @@ def tecpolyface(num_faces, face_node_counts, face_nodes, face_left_elems, face_r
         raise Exception("tecpolyface Error")
 
 def __zone_write_double_values(values):
-    values = np.asarray(values,dtype=np.float64)
+    values = np.asarray(values.ravel(),dtype=np.float64)
     tecio.tecdat142.restype=ctypes.c_int32
     tecio.tecdat142.argtypes=(
             ctypes.POINTER(ctypes.c_int32), # NumPts
@@ -267,7 +267,7 @@ def __zone_write_double_values(values):
         raise Exception("zone_write_double_values Error")
 
 def __zone_write_float_values(values):
-    values = np.asarray(values,dtype=np.float32)
+    values = np.asarray(values.ravel(),dtype=np.float32)
     tecio.tecdat142.restype=ctypes.c_int32
     tecio.tecdat142.argtypes=(
             ctypes.POINTER(ctypes.c_int32), # NumPts
