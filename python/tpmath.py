@@ -75,6 +75,20 @@ def compute_average(source_zones, variables_to_average, constant_variables=None)
             tp.data.operate.execute_equation("{%s} = 0"%(v.name), zones=[avg_zone])
     return avg_zone
 
+#
+# Computes the phase average of the supplied zones for each variable supplied. 
+# Over number of zones_per_timeperiod specified. Each zone must have the same number of points.
+#
+# Creates a new zones called "phase n.nn pi - oldName" where n.nn is the phase defined by 
+# number of zones in one timeperiod. The resulting zones will have variable values of
+# zero for any variable not supplied to this function
+#
+# source_zones - the set of zones to use for computing the phase average
+# zones_per_timeperiod - number of zones in one timeperiod
+# variables_to_average - the variables for which to average
+# constant_variables - any variables that are constant across the set
+#   of source_zones. Often these are X,Y,Z variables.
+#
 def compute_phaseAverage(source_zones, zones_per_timeperiod, variables_to_average, constant_variables=None):
 	# currently implemented for constant delta t solution files
 	dataset = source_zones[0].dataset
