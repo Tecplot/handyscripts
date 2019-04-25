@@ -75,4 +75,35 @@ def compute_average(source_zones, variables_to_average, constant_variables=None)
             tp.data.operate.execute_equation("{%s} = 0"%(v.name), zones=[avg_zone])
     return avg_zone
 
-
+def compute_phaseAverage(source_zones, zones_per_timeperiod, variables_to_average, constant_variables=None):
+	# currently implemented for constant delta t solution files
+	dataset = source_zones[0].dataset
+	phAvg_zones = dataset.copy_zones(source_zones[slice(zones_per_timeperiod)])
+	# rename zones
+	for zone, i in zip(phAvg_zones, range(zones_per_timeperiod)):
+		zone.name = "%s %.2f pi - %s" % ('phase', 2*i/zones_per_timeperiod, zone.name)
+		zone.strand = dataset.num_zones
+	# all_zNames = dataset.zone_names
+	# phAvg_zNames = ["%s %.2f pi - %s" % ('phase', 2*i/zones_per_timeperiod, all_zNames[i]) for i in range(zones_per_timeperiod)]
+	# dataset.zone_names[-zones_per_timeperiod:] = phAvg_zNames[:]
+	for i in range(zones_per_timeperiod):
+		#list zones with same phase
+		phase_i_zones = source_zones[slice(i, len(source_zones), zones_per_timeperiod)]
+		
+		for v in dataset.variables():
+			# Skip over the constants
+			if constant_variables and v in constant_variables:
+				continue
+			
+			if v in variables_to_average:
+				print("Computing average for phase: {} pi, var: {}".format(i*2/zones_per_timeperiod, v.name))
+				compute_sum(v, phase_i_zones, phAvg_zones[i])
+				equation = "{%s} = {%s}/%d"%(v.name, v.name, len(phase_i_zones))
+				tp.data.operate.execute_equation(equation, zones=[phAvg_zones[i]])
+			else:
+				# If the variable is not to be averaged, set it to zero so we don't
+				# mislead the user with results that were copied from a source zone.
+				# Making the variable passive would be better, but there's currently
+				# no way to convert a variable to passive.
+				tp.data.operate.execute_equation("{%s} = 0"%(v.name), zones=[phAvg_zones[i]])
+	return phAvg_zones
