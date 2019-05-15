@@ -32,6 +32,8 @@ import tecplot as tp
 from tecplot.constant import *
 import tputils
 
+assert tp.version_info >= (0, 14), 'This script requires PyTecplot 0.14 or later'
+
 tp.session.connect()
 
 
@@ -81,9 +83,8 @@ def plot_vertical_transect(zone, xvar, yvar):
 
 def make_transect_zone(x_vals, y_vals, source_strand, dataset):
     """Creates a vertical transect from Siglev values"""
-    try:
-        dist_var = dataset.variable("distance")
-    except(tp.exception.TecplotPatternMatchError):
+    dist_var = dataset.variable("distance")
+    if dist_var is None:
         dist_var = dataset.add_variable("distance")
     dd = np.sqrt((x_vals[1:] - x_vals[:-1])**2 + (y_vals[1:] - y_vals[:-1])**2)
     dist = np.cumsum(dd)
@@ -139,10 +140,9 @@ def main():
     variables_to_interpolate.remove(dataset.variable("y"))
     variables_to_interpolate.remove(dataset.variable("siglev"))
     # Might not be in the dataset yet
-    try:
-        variables_to_interpolate.remove(dataset.variable("distance"))
-    except(tp.exception.TecplotPatternMatchError):
-        pass
+    dist_var = dataset.variable("distance")
+    if dist_var is not None:
+        variables_to_interpolate.remove(dist_var)
 
     begin = time.time()
     transect_base_zone = None
