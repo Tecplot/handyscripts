@@ -1,5 +1,6 @@
 import numpy as np
 import tecplot as tp
+import time
 
 tp.session.connect()
 
@@ -39,10 +40,9 @@ def split_particle_zone(zone, min_time, max_time, strand):
     for time_idx in range(num_points):
         z = zone.dataset.add_ordered_zone("{} Transient".format(zone.name), (1,1,1), strand_id=strand, solution_time=time_steps[time_idx])
         for v in variables:
-            z.values(v.index)[0] = variable_values[v.index][time_idx]
+            z.values(v)[0] = variable_values[v.index][time_idx]
 
 with tp.session.suspend():
-    import time
     start = time.time()
     ds = tp.active_frame().dataset
     min_time = ds.solution_times[0]
@@ -54,7 +54,7 @@ with tp.session.suspend():
     particle_zones = [z for z in ds.zones("*Particle*") if 'Transient' not in z.name] 
 
     # Using a temporary file is faster than writing 100s of zones via PyTecplot
-    use_temp_file = False
+    use_temp_file = True
     if use_temp_file:
         import tempfile
         import os
