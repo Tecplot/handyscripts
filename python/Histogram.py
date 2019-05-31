@@ -1,9 +1,7 @@
 import tecplot as tp
 import numpy as np
-import os
 from tecplot.constant import *
 
-tp.session.connect()
 
 
 def plot_histogram(histogram, var_name):
@@ -71,16 +69,19 @@ def hist(var, bins = 5, zones = None):
     h = np.histogram(all_values, bins)
     return h
 
-    
-with tp.session.suspend():
-    """
-    Update var_name, bins, and zones to your liking
-    """
-    dataset = tp.active_frame().dataset
-    var_name = "X"
-    variable = dataset.variable(var_name)
-    bins = 16
-    zones = dataset.zones()
-    h = hist(variable, bins, zones)
-    plot = plot_histogram(h, variable.name)
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Computes and plots a histogram of a given variable.")
+    parser.add_argument("varname", help="Name of the variable for which to compute the histogram")
+    parser.add_argument("bins", help="Number of bins in the histogram", type=int)
+    args = parser.parse_args()
+    tp.session.connect()
+    with tp.session.suspend():
+        dataset = tp.active_frame().dataset
+        var_name = args.varname
+        variable = dataset.variable(var_name)
+        bins = args.bins
+        zones = dataset.zones()
+        h = hist(variable, bins, zones)
+        plot = plot_histogram(h, variable.name)
 
