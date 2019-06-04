@@ -63,7 +63,7 @@ with tp.session.suspend():
 TITLE     = "Transient Particles"
 VARIABLES = """)
         for v in ds.variables():
-            outfile.write('\"{}\"\n'.format(v.name))
+            outfile.write("{}\n".format(v.name))
         for z in particle_zones:
             print("Splitting ", z.name)
             split_particle_zone_to_file(z, min_time, max_time, strand, outfile)

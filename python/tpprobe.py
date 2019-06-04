@@ -42,7 +42,6 @@ def probe_index_through_time(zone, variable, index_number):
             raise Exception("The variable must have the same value location (cell-centered or nodal).")
 
         result.append((z.solution_time, vals[index_number]))
-        print(".", end = '')
     return result
 
 def probe_element_through_time(zone, variable, element_number):
