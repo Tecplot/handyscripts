@@ -134,7 +134,7 @@ for fname in files:
                                                    source=tp.constant.SliceSource.VolumeZones)
 
         # Ensure that only the extract slice is active at this point
-        for fm in plot.fieldmaps:
+        for fm in plot.fieldmaps():
             fm.show = False
         plot.fieldmap(zn_2Dslice).show = True
 
@@ -159,7 +159,7 @@ for fname in files:
 
         # Turn the original data fieldmaps back on to ensure the extraction
         # goes through the appropriate zones
-        for fm in plot.fieldmaps:
+        for fm in plot.fieldmaps():
             fm.show = True
         plot.fieldmap(ordered_extract).show = False
 

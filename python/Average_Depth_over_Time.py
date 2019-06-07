@@ -53,16 +53,11 @@ def avg_set_of_zones(source_zones, avg_zone, timestep):
 # --------------------------------------------
 #            Input Parameters
 # datafile - Path to NetCFD FVCOM data file
-# offsets - List of values to offset the base zone along the Z axis.
-#           For FVCOM these should be between -1,0 as they represent
-#           siglay values
 # --------------------------------------------
 
 
-if sys.argv:
+if len(sys.argv)>1:
     datafile = sys.argv[1]
-else:
-    datafile = r"C:\Users\devon\Tecplot, Inc\ProductMarketing - Documents\GeoSciences_Research\FVCOM_Demo\psm_0180.nc"
 
 offsets = np.linspace(-1, 0, num=10)
 
@@ -77,8 +72,8 @@ offsets = np.linspace(-1, 0, num=10)
 with tp.session.suspend():
     # Setup dataset, plot and get list of original zones
     tp.new_layout()
-    plot = tp.active_frame().plot()
     dataset = tp.data.load_fvcom(datafile)
+    plot = tp.active_frame().plot()
     base_vol_zones = list(dataset.zones())
 
     # Switch to SigLev as Z variable and generate surface from SigLev isosurface = 0
