@@ -41,9 +41,9 @@ if __debug__:
             raise Exception("All line zones must have the same number of points!")
 
 with tp.session.suspend():
-    try:
-        time_var = dataset.variable('time')
-    except:
+    
+    time_var = dataset.variable('time')
+    if time_var is None: 
         time_var = dataset.add_variable('time')
 
     new_zone = dataset.add_ordered_zone("TransientLinesAsIJData", (imax,jmax,1),locations=[ValueLocation.Nodal]*dataset.num_variables)
