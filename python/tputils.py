@@ -19,6 +19,32 @@ from tecplot.constant import *
 from tecplot.exception import *
 from tecplot.tecutil import _tecutil
 
+#
+# It's common for CFD Analyzer to lock variables, which prohibits our editing them. This
+# context temporarily unlocks a variable so you can edit it.
+#
+# WARNING: You better know what you're doing if you use this!!!
+#
+class ForceEditableVariable(object):
+    def __init__(self, variable):
+        self.var = variable
+        self.is_locked = False
+        self.lock_mode = None
+        self.lock_owner = None
+        self.lock_on_exit = False
+    def __enter__(self):
+        self.is_locked, self.lock_mode, self.lock_owner = _tecutil.VariableIsLocked(self.var.index+1)
+        if self.is_locked and self.lock_mode == VarLockMode.ValueChange:
+            _tecutil.VariableLockOff(self.var.index+1, self.lock_owner)
+            self.lock_on_exit = True
+    def __exit__(self, type, value, traceback):
+        if self.lock_on_exit:
+            _tecutil.VariableLockOn(self.var.index+1, self.lock_mode, self.lock_owner)
+
+def chunks(l, n):
+    """Iterate over ``l`` in chunks of size ``n``"""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
 def fieldmap_minmax(fieldmap, variable):
     """Data limits for a given varible across all zones in a fieldmap"""
