@@ -216,7 +216,6 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
         if len(cell_types) > 1:
             print("Multiple cell types found: ", cell_types)
         zn_type = get_best_zone_type(cell_types)
-        print("Chose ZoneType: ", zn_type)
     
         face_map = None
         if is_unstructured_zone(zn_type):
@@ -338,7 +337,7 @@ def add_vtk_dataset(vtk_dataset, tecplot_dataset):
     elif data_type == vtk.VTK_IMAGE_DATA:
         add_image_data(vtk_dataset, tecplot_dataset)
         
-def convert_vtk_file(vtk_file, plt_file):
+def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
     reader = None
     if vtk_file.endswith(".vtu"):
         reader = vtk.vtkXMLUnstructuredGridReader()
@@ -355,7 +354,10 @@ def convert_vtk_file(vtk_file, plt_file):
     tecplot_dataset = tp.active_frame().dataset
     add_vtk_dataset(vtk_dataset, tecplot_dataset)
     for z in tecplot_dataset.zones():
-        z.name = os.path.basename(f)
+        z.name = os.path.basename(vtk_file)
+        if strand and solution_time:
+            z.strand = strand
+            z.solution_time = solution_time
     tp.data.save_tecplot_plt(plt_file, dataset=tecplot_dataset)
 
 if __name__ == '__main__':
