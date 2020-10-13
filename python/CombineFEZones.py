@@ -6,11 +6,13 @@ from tecplot.constant import *
 tp.session.connect()
 
 
-# Remove these three lines if you already have a dataset
+# Remove these seven lines if you already have a dataset
 tp.new_layout()
 examples_directory = tp.session.tecplot_examples_directory()
 tp.data.load_tecplot(os.path.join(examples_directory, "SimpleData", "F18.plt"))
-
+# Add CellCentered variable
+tp.data.operate.execute_equation(equation='{S_CC} = {S}',
+    value_location=ValueLocation.CellCentered)
 
 ds = tp.active_frame().dataset
 #
@@ -36,23 +38,38 @@ for z in zones:
     num_elements += z.num_elements
 
 #
+# Get variable locations from the first zone
+#
+var_locations = [v.values(0).location for v in ds.variables()]
+#
 # Create the new zone using the total point/element count
 #
-new_zone = ds.add_fe_zone(zone_type, "Combined Zone", num_points, num_elements)
+new_zone = ds.add_fe_zone(zone_type, "Combined Zone", num_points, num_elements,
+                          locations=var_locations)
 
 #
 # Populate the new zone, being sure to offset the point and element indices
 #
 start_point = 0
+start_point_cc = 0
 start_element = 0
 for z in zones:
     print("Processing Zone: ", z.name)
-    end_point = start_point + z.num_points
-    node_offset = start_point
     for v in ds.variables():
         print("  Processing Variable: ", v.name)
-        new_zone.values(v)[start_point:end_point] = z.values(v).as_numpy_array()
-    
+        vals = new_zone.values(v)
+        if vals.location == tp.constant.ValueLocation.Nodal:
+            end_point = start_point + z.num_points
+            vals[start_point:end_point] = z.values(v).as_numpy_array()
+        else: 
+            end_point_cc = start_point_cc + z.num_elements
+            vals[start_point_cc:end_point_cc] = z.values(v).as_numpy_array()
+
+    node_offset = start_point
+    start_point = end_point
+    start_point_cc = end_point_cc
+
+
     print("  Setting Nodemap")
     offset_nodemap = []
     for element in z.nodemap[:]:
@@ -62,9 +79,7 @@ for z in zones:
         offset_nodemap.append(offset_element)
     end_element = start_element + z.num_elements
     new_zone.nodemap[start_element:end_element] = offset_nodemap
-    
-    start_point = end_point
+
     start_element = end_element
 
 print("Done")
-
