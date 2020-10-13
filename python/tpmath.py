@@ -1,5 +1,4 @@
 """Useful Mathematical Utilities for PyTecplot
-
 This file contains functions we have found to be useful across multiple
 scripts that are mathematical or computational in nature. It is meant to
 be imported into a running python script with ``import tpmath``.
@@ -38,25 +37,16 @@ def compute_sum(variable, source_zones, dest_zone, chunk_size=50):
 #
 # All source zones must have the same number of nodes
 #
-def compute_minmax(variable, source_zones, dest_zone, operator='<', chunk_size=10):
+def compute_minmax(variable, source_zones, dest_zone, operator='<'):
     with tputils.ForceEditableVariable(variable):
         # Initialize with values from the first source zone
         print(variable.name)
         equation = "{{{var}}} = {{{var}}}[{zone}]".format(var=variable.name, zone=source_zones[0].index+1)
         tp.data.operate.execute_equation(equation, zones=[dest_zone])
 
-        print("Computing in chunks of ", chunk_size)
-        for zones in tputils.chunks(source_zones, chunk_size):
-            equation = "{{{v}}} = IF({{{v}}} {operator} {{{v}}}[{z}], {{{v}}}, ".format(v=variable.name, operator=operator, z=zones[0].index+1)
-            for i,zone in enumerate(zones):
-                if i+1 == len(zones):
-                    equation += "{{{v}}}[{cur_index}]".format(v=variable.name, cur_index=zone.index+1)
-                else:
-                    cur_index = zone.index+1
-                    next_index = zones[i+1].index+1
-                    equation += "IF({{{v}}}[{cur_index}] {operator} {{{v}}}[{next_index}], {{{v}}}[{cur_index}], ".format(v=variable.name, operator=operator, cur_index=cur_index, next_index=next_index)
-            for i in zones:
-                equation += ")"
+        for zone in source_zones:
+            equation = "{{{v}}} = IF({{{v}}} {operator} {{{v}}}[{z}], {{{v}}}, {{{v}}}[{z}])".format(v=variable.name, operator=operator, z=zone.index+1)
+            print(equation)
             tp.data.operate.execute_equation(equation, zones=[dest_zone])
 
 
@@ -168,11 +158,8 @@ def compute_phaseAverage(source_zones, zones_per_timeperiod, variables_to_averag
 # variables_to_compute - the variables for which to compute statistics 
 # constant_variables - any variables that are constant across the set
 #   of source_zones. Often these are X,Y,Z variables.
-# chunk_size - The number of zones to simultaneously load in order to compute the
-#   sum. Larger numbers will typically result in faster run times, but will consume
-#   more RAM.
 #
-def compute_statistics(source_zones, variables_to_compute, constant_variables=None, chunk_size=50):
+def compute_statistics(source_zones, variables_to_compute, constant_variables=None):
     dataset = source_zones[0].dataset
     min_zone = dataset.copy_zones(source_zones[0])[0]
     max_zone = dataset.copy_zones(source_zones[0])[0]
@@ -197,8 +184,8 @@ def compute_statistics(source_zones, variables_to_compute, constant_variables=No
 
         if v in variables_to_compute:
             print("Computing min/max for strand: {}, var: {}".format(strand, v.name))
-            compute_minmax(v, source_zones, min_zone, operator="<", chunk_size=chunk_size)
-            compute_minmax(v, source_zones, max_zone, operator=">", chunk_size=chunk_size)
+            compute_minmax(v, source_zones, min_zone, operator="<")
+            compute_minmax(v, source_zones, max_zone, operator=">")
         else:
             # If the variable is not to be averaged, set it to zero so we don't
             # mislead the user with results that were copied from a source zone.
