@@ -2,7 +2,22 @@
 
 usage:
 
-    > python TimeStats.py
+    > python TimeStats.py <Strand Number> 
+    
+Input
+-----
+   Strand Number - Optional- Defines the set of zones to calculate the average over. 
+        If not supplied, all strands will be calculated. 
+        Strand number can be found in Dataset Information dialog. 
+   
+
+Description
+-----------
+This script assumes that a transient dataset is loaded into 360 with PyTecplot
+Connections enabled via the Scripting menu. The result of the script will be two
+new zones where one is the minimum value for each node though time and the other zone 
+will have the maximum value for each node through time. 
+
 
 Necessary modules
 -----------------
@@ -12,19 +27,6 @@ tputils
     Generic PyTecplot Utilities
 
 
-Description
------------
-To run this script we must first enable PyTecplot Connections via the Scripting menu.
-The tpmath and tputils modules are also required.
-
-Execute the script from a command prompt or terminal.
-This will prompt for which Strand to compute statistics.
-The strand number can be found in the Dataset Information dialog.
-A strand is simply an integer which identifies a collection of zones through time.
-Once we enter the strand number the script will handle the zone duplication
-and execution of the formulas to compute the results.
-When the script is finished, activate the Time Statistics zone to view results.
-
 """
 import tecplot as tp
 import tpmath
@@ -33,30 +35,35 @@ import time
 import sys
 
 tp.session.connect()
-#in_strand = input("Which strand do you want to compute statistics? Enter the strand number or enter 'all': ")
-in_strand = sys.argv[1]
-chunk_size = int(sys.argv[2])
+
+try:
+    in_strand = [int(sys.argv[1])]
+except: 
+    in_strand = []
+
+
 start = time.time()
 with tp.session.suspend():
     dataset = tp.active_frame().dataset
-
-    constant_variables = [dataset.variable(0), dataset.variable(1), dataset.variable(2)]
-    variables_to_compute = list(dataset.variables())
+    plot = tp.active_frame().plot()
+    
+    # Assumes that the grid variables are constant and wont be calculated.
+    constant_variables = tputils.get_axes_variable_assignment(plot)
+    variables_to_compute = list(dataset.variables())[-2:-1]
 
     tp.macro.execute_command("$!FileConfig LoadOnDemand { UNLOADSTRATEGY = MinimizeMemoryUse }")
 
     zones_by_strand = tputils.get_zones_by_strand(dataset)
-    try:
-        strand_to_compute = int(in_strand)
-        print("Computing statistics for strand: ", strand_to_compute)
-        source_zones = zones_by_strand[strand_to_compute]
-        tpmath.compute_statistics(source_zones, variables_to_compute, constant_variables, chunk_size=chunk_size)
-    except (TypeError, ValueError):  # Assume the user typed "all"
+    if len(in_strand) > 0:         
+        print("Computing statistics for strand: ", in_strand[0])
+        source_zones = zones_by_strand[in_strand[0]]
+        tpmath.compute_statistics(source_zones, variables_to_compute, constant_variables)
+    else: 
         print("Computing statistics for all strands")
         for strand, source_zones in zones_by_strand.items():
             strand_start = time.time()
             print("Computing statistics for strand: ", strand)
-            tpmath.compute_statistics(source_zones, variables_to_compute, constant_variables, chunk_size=chunk_size)
+            tpmath.compute_statistics(source_zones, variables_to_compute, constant_variables)
             print("Time for strand {} = {}".format(strand, time.time()-strand_start))
         
 print("Elapsed time: ", time.time()-start)

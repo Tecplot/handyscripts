@@ -150,9 +150,9 @@ def compute_phaseAverage(source_zones, zones_per_timeperiod, variables_to_averag
 # Computes the min/max of the supplied zones for each variable supplied. Each
 # zone must have the same number of points.
 #
-# Creates a new zone called "Time Min/Max - nnn" where nnn is the strand number
-# of the first source_zones element.  The resulting zone will have variable values of
-# zero for any variable not supplied to this function
+# Creates a new zones called "Time Min - nnn" and "Time Max - nnn" where nnn is 
+# the strand number of the first source_zones element.  The resulting zone will 
+# have variable values of zero for any variable not supplied to this function.
 #
 # source_zones - the set of zones to use for computing the statistics 
 # variables_to_compute - the variables for which to compute statistics 

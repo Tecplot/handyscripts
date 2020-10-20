@@ -117,3 +117,18 @@ def get_zones_by_strand_in_active_frame():
         zones_by_strand[s] = zones
 
     return zones_by_strand
+
+
+def get_axes_variable_assignment(plot):
+    """ Return the assigned axis variables for Cartesian plot types""" 
+    if  type(plot) == tp.plot.Cartesian2DFieldPlot :
+        x_var = plot.axes.x_axis.variable
+        y_var = plot.axes.y_axis.variable
+        return [x_var, y_var]
+    elif  type(plot) == tp.plot.Cartesian3DFieldPlot: 
+        x_var = plot.axes.x_axis.variable
+        y_var = plot.axes.y_axis.variable
+        z_var = plot.axes.z_axis.variable
+        return [x_var, y_var, z_var]
+    else:     
+        assert "Not a Cartesian plot" 
