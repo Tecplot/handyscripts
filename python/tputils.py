@@ -131,4 +131,4 @@ def get_axes_variable_assignment(plot):
         z_var = plot.axes.z_axis.variable
         return [x_var, y_var, z_var]
     else:     
-        assert "Not a Cartesian plot" 
+        return None

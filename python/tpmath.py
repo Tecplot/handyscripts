@@ -99,7 +99,7 @@ def compute_average(source_zones, variables_to_average, constant_variables=None,
 # Computes the phase average of the supplied zones for each variable supplied. 
 # Over number of zones_per_timeperiod specified. Each zone must have the same number of points.
 #
-# Creates a new zones called "phase n.nn pi - oldName" where n.nn is the phase defined by 
+# Creates new zones called "phase n.nn pi - oldName" where n.nn is the phase defined by 
 # number of zones in one timeperiod. The resulting zones will have variable values of
 # zero for any variable not supplied to this function
 #
@@ -150,7 +150,7 @@ def compute_phaseAverage(source_zones, zones_per_timeperiod, variables_to_averag
 # Computes the min/max of the supplied zones for each variable supplied. Each
 # zone must have the same number of points.
 #
-# Creates a new zones called "Time Min - nnn" and "Time Max - nnn" where nnn is 
+# Creates new zones called "Time Min - nnn" and "Time Max - nnn" where nnn is 
 # the strand number of the first source_zones element.  The resulting zone will 
 # have variable values of zero for any variable not supplied to this function.
 #
@@ -160,6 +160,7 @@ def compute_phaseAverage(source_zones, zones_per_timeperiod, variables_to_averag
 #   of source_zones. Often these are X,Y,Z variables.
 #
 def compute_statistics(source_zones, variables_to_compute, constant_variables=None):
+    source_zones = list(source_zones)
     dataset = source_zones[0].dataset
     min_zone = dataset.copy_zones(source_zones[0])[0]
     max_zone = dataset.copy_zones(source_zones[0])[0]
@@ -179,10 +180,10 @@ def compute_statistics(source_zones, variables_to_compute, constant_variables=No
 
     for v in dataset.variables():
         # Skip over the constants
-        if constant_variables and v in constant_variables:
+        if constant_variables and v in list(constant_variables):
             continue
 
-        if v in variables_to_compute:
+        if v in list(variables_to_compute):
             print("Computing min/max for strand: {}, var: {}".format(strand, v.name))
             compute_minmax(v, source_zones, min_zone, operator="<")
             compute_minmax(v, source_zones, max_zone, operator=">")

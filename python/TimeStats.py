@@ -37,9 +37,9 @@ import sys
 tp.session.connect()
 
 try:
-    in_strand = [int(sys.argv[1])]
+    in_strand = int(sys.argv[1])
 except: 
-    in_strand = []
+    in_strand = None
 
 
 start = time.time()
@@ -54,9 +54,9 @@ with tp.session.suspend():
     tp.macro.execute_command("$!FileConfig LoadOnDemand { UNLOADSTRATEGY = MinimizeMemoryUse }")
 
     zones_by_strand = tputils.get_zones_by_strand(dataset)
-    if len(in_strand) > 0:         
-        print("Computing statistics for strand: ", in_strand[0])
-        source_zones = zones_by_strand[in_strand[0]]
+    if in_strand != None:         
+        print("Computing statistics for strand: ", in_strand)
+        source_zones = zones_by_strand[in_strand]
         tpmath.compute_statistics(source_zones, variables_to_compute, constant_variables)
     else: 
         print("Computing statistics for all strands")
