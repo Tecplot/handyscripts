@@ -49,7 +49,7 @@ with tp.session.suspend():
     
     # Assumes that the grid variables are constant and wont be calculated.
     constant_variables = tputils.get_axes_variable_assignment(plot)
-    variables_to_compute = list(dataset.variables())[-2:-1]
+    variables_to_compute = list(dataset.variables())
 
     tp.macro.execute_command("$!FileConfig LoadOnDemand { UNLOADSTRATEGY = MinimizeMemoryUse }")
 
