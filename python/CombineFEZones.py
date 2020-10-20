@@ -1,3 +1,18 @@
+"""Merge multiple FE zones into a single zone 
+
+usage:
+
+    > python CombineFEZones.py
+
+
+Description
+-----------
+This script will load a sample file and merge all FE zones into a single zone. 
+It supports a mixture of Nodal and CellCentered variables. 
+
+"""
+
+
 import os
 import tecplot as tp
 from tecplot.constant import *
@@ -6,7 +21,7 @@ from tecplot.constant import *
 tp.session.connect()
 
 
-# Remove these seven lines if you already have a dataset
+# Remove the following lines if you already have a dataset
 tp.new_layout()
 examples_directory = tp.session.tecplot_examples_directory()
 tp.data.load_tecplot(os.path.join(examples_directory, "SimpleData", "F18.plt"))
