@@ -67,6 +67,7 @@ new_zone = ds.add_fe_zone(zone_type, "Combined Zone", num_points, num_elements,
 #
 start_point = 0
 start_point_cc = 0
+end_point_cc = 0
 start_element = 0
 for z in zones:
     print("Processing Zone: ", z.name)
