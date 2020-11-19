@@ -3,8 +3,26 @@ import sys
 
 tecio = ctypes.cdll.LoadLibrary(r"C:\Program Files\Tecplot\Tecplot 360 EX Beta\bin\tecio.dll")
 
+#Constants
+VALUELOCATION_CELLCENTERED = 0
+VALUELOCATION_NODECENTERED = 1
+
+FILETYPE_GRIDANDSOLUTION = 0
+FILETYPE_GRID = 1
+FILETYPE_SOLUTION = 2
+
+# var_data_types
+FD_DOUBLE = 2
+FD_FLOAT = 1
+FD_INT32 = 3
+FD_INT16 = 4
+FD_UINT8 = 5
+
 # Only SZL files are supported.  Use the ".szplt" extension
-def open_file(file_name, dataset_title, var_names):
+def open_file(file_name, dataset_title, var_names, 
+    file_type=FILETYPE_GRIDANDSOLUTION,
+    grid_file_handle=None):
+
     tecio.tecFileWriterOpen.restype=ctypes.c_int32
     tecio.tecFileWriterOpen.argtypes=(
             ctypes.c_char_p,
@@ -18,14 +36,15 @@ def open_file(file_name, dataset_title, var_names):
 
     file_handle = ctypes.c_void_p()
     varnamelist = ",".join(var_names)
+    filetype = ctypes.c_int32(file_type) # 0=Grid&Solution, 1=Grid, 2=Solution
     ret = tecio.tecFileWriterOpen(
             ctypes.c_char_p(bytes(file_name, encoding="UTF-8")),
             ctypes.c_char_p(bytes(dataset_title, encoding="UTF-8")),
             ctypes.c_char_p(bytes(varnamelist, encoding="UTF-8")),
             1, # SZL is required with this API
-            0, # 0 == Grid & Solution
+            filetype, # 0 == Grid & Solution
             0,
-            None, # Grid file handle
+            grid_file_handle, # Grid file handle
             ctypes.byref(file_handle))
     if ret != 0:
         raise Exception("open_file Error")
@@ -40,14 +59,12 @@ def close_file(file_handle):
     if ret != 0:
         raise Exception("close_file Error")
 
-# var_data_types
-FD_DOUBLE = 2
-FD_FLOAT = 1
-FD_INT32 = 3
-FD_INT16 = 4
-FD_UINT8 = 5
 
-def create_ordered_zone(file_handle, title, shape, var_sharing=None, var_data_types=None):
+def create_ordered_zone(file_handle, zone_name, shape, 
+    var_sharing=None,
+    var_data_types=None,
+    value_locations=None):
+
     tecio.tecZoneCreateIJK.restype=ctypes.c_int32
     tecio.tecZoneCreateIJK.argtypes=(
             ctypes.c_void_p, #file_handle
@@ -72,14 +89,18 @@ def create_ordered_zone(file_handle, title, shape, var_sharing=None, var_data_ty
     var_type_list = None
     if var_data_types:
         var_type_list = (ctypes.c_int32*len(var_data_types))(*var_data_types)
+    value_location_list = None
+    if value_locations:
+        value_location_list = (ctypes.c_int32*len(value_locations))(*value_locations)
+
     ret = tecio.tecZoneCreateIJK(file_handle, 
-        ctypes.c_char_p(bytes(title,encoding="UTF-8")),
+        ctypes.c_char_p(bytes(zone_name,encoding="UTF-8")),
         shape[0],
         shape[1],
         shape[2],
         var_type_list, #varTypes
         var_share_list, #shareVarFromZone
-        None, #valueLocations
+        value_location_list, #valueLocations
         None, #passiveVarList
         0, #shareFaceNeighborsFromZone
         0, #numFaceConnections
@@ -89,7 +110,7 @@ def create_ordered_zone(file_handle, title, shape, var_sharing=None, var_data_ty
         raise Exception("create_ordered_zone Error")
     return zone
 
-def zone_set_solution_time(file_handle, zone, solution_time, strand):
+def zone_set_solution_time(file_handle, zone, strand=0, solution_time=0):
     tecio.tecZoneSetUnsteadyOptions.restype=ctypes.c_int32
     tecio.tecZoneSetUnsteadyOptions.argtypes=(
             ctypes.c_void_p, #file_handle
@@ -204,7 +225,7 @@ def zone_write_uint8_values(file_handle, zone, var, values):
 def test():
     import numpy as np
     f = open_file("test.szplt", "Title", ['byte','short','long','float','double'])
-    zone = create_ordered_zone(f, "Zone", (3,3,1), None, [FD_UINT8,FD_INT16,FD_INT32,FD_FLOAT,FD_DOUBLE])
+    zone = create_ordered_zone(f, "Zone", (3,3,1), var_sharing=None, var_data_types=[FD_UINT8,FD_INT16,FD_INT32,FD_FLOAT,FD_DOUBLE])
     zone_write_uint8_values(f, zone, 1, [1,2,3,1,2,3,1,2,3]) #byte vals
     zone_write_int16_values(f, zone, 2, [1,1,1,2,2,2,3,3,3]) #short vals
     zone_write_int32_values(f, zone, 3, [1,2,3,4,5,6,7,8,9]) #long vals
@@ -212,6 +233,29 @@ def test():
     zone_write_double_values(f, zone, 5, np.linspace(1,2,9)) #double vals
     close_file(f)
     print("Wrote test.szplt")
+
+def test_gridandsolution(grid_file, solution_file):
+    grid_file_handle = open_file(grid_file, "Title", ['x','y'], file_type=FILETYPE_GRID)
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED] # 'y'
+    zone = create_ordered_zone(grid_file_handle, "Zone", (3,3,1), value_locations=value_locations, var_data_types=[FD_DOUBLE]*2)
+    zone_set_solution_time(grid_file_handle, zone, strand=1)
+    zone_write_double_values(grid_file_handle, zone, 1, [1,2,3,1,2,3,1,2,3]) #xvals
+    zone_write_double_values(grid_file_handle, zone, 2, [1,1,1,2,2,2,3,3,3]) #yvals
+
+    for t in [1,2,3]:
+        outfile = "{}_{}".format(t, solution_file)
+        solution_file_handle = open_file(outfile, "Title", ['c'], file_type=FILETYPE_SOLUTION, grid_file_handle=grid_file_handle)
+        value_locations = [VALUELOCATION_CELLCENTERED] # 'c'
+        zone = create_ordered_zone(solution_file_handle, "Zone", (3,3,1), value_locations=value_locations, var_data_types=[FD_DOUBLE])
+        zone_set_solution_time(solution_file_handle, zone, strand=1, solution_time=t)
+        zone_write_double_values(solution_file_handle, zone, 1, [t*1,t*2,t*3,t*4]) #cvals
+        close_file(solution_file_handle)
+    close_file(grid_file_handle)
+
+if "--testgridandsolution" in sys.argv:
+    test_gridandsolution("grid.szplt", "solution.szplt")
 
 if "--test" in sys.argv:
     test()
