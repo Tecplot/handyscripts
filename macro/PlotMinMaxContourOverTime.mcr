@@ -50,6 +50,10 @@ $!RENAMEDATASETZONE
   ZONE = |MinContourZone|
   Name = "Min |ContourVarName| over Time"
 
+# We deactivate the zones we just created because we don't want their
+# values to be considered when using |MAXC| & |MINC| below.
+$!ACTIVEFIELDZONES -= [|MinContourZone|, |MaxContourZone|]
+
 $!LOOP |NUMTIMESTEPS|
   $!EXTENDEDCOMMAND 
     COMMANDPROCESSORID='Extend Time MCR' 
@@ -87,9 +91,6 @@ $!LOOP |NUMTIMESTEPS|
     FIELDVALUE = |MINC|
 $!ENDLOOP
 
-# We deactivate the zone we just created because we don't want it
-# to display in the current plot.  We'll show it in a new frame instead.
-$!ACTIVEFIELDZONES -= [|NUMZONES|]
 
 # Turn on Time linking because we'll be turning on the
 # Solution Time axis marker on the following XY frame and
