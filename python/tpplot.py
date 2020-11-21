@@ -30,7 +30,7 @@ def add_line_zone(data, zone_name, x_var_name, y_var_name):
     ds = tp.active_frame().dataset
     add_variable_to_dataset(ds, x_var_name)
     add_variable_to_dataset(ds, y_var_name)
-    zone = ds.add_ordered_zone(zone_name, (len(data),1,1))
+    zone = ds.add_ordered_zone(zone_name, (len(data),1,1), locations=[ValueLocation.Nodal]*ds.num_variables)
     zone.values(x_var_name)[:] = [n[0] for n in data]
     zone.values(y_var_name)[:] = [n[1] for n in data]
     return zone
