@@ -22,10 +22,11 @@ def field_data_type(vtk_data_type):
 def zone_type(vtk_cell_type):
     type_dict = dict()
     type_dict[vtk.VTK_TRIANGLE] = ZoneType.FETriangle
+    type_dict[vtk.VTK_QUADRATIC_TRIANGLE] = ZoneType.FETriangle
     type_dict[vtk.VTK_QUAD]     = ZoneType.FEQuad 
     type_dict[vtk.VTK_TETRA]    = ZoneType.FETetra
+    type_dict[vtk.VTK_QUADRATIC_TETRA] = ZoneType.FETetra
     type_dict[vtk.VTK_HEXAHEDRON] = ZoneType.FEBrick
-    # May need special code to create collapsed bricks
     type_dict[vtk.VTK_WEDGE] = ZoneType.FEBrick
     type_dict[vtk.VTK_PYRAMID] = ZoneType.FEBrick
     # Polytope
@@ -89,7 +90,10 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
             if num_components == 1:
                 full_name = name
             else: 
-                suffix = ['_X', '_Y', '_Z']
+                if num_components == 3:
+                    suffix = ['_X', '_Y', '_Z']
+                elif num_components == 6:
+                    suffix = ['_XX', '_YY', '_ZZ', '_XY', '_YZ', '_XZ']
                 full_name = name+suffix[component]
                 
             variable = zone.dataset.add_variable(full_name, dtypes = [fd_type], locations=location)
@@ -110,15 +114,56 @@ def add_point_data(pd, zone):
 def add_cell_data(cd, zone):
     add_vtk_data(cd, zone, location=ValueLocation.CellCentered)
 
-def get_node_map(vtk_dataset):
+def get_cell_connectivity(vtk_cell, zone_type):
+    cell_type = vtk_cell.GetCellType()
+    if cell_type in [vtk.VTK_QUADRATIC_TRIANGLE, vtk.VTK_QUADRATIC_TETRA]:
+        idList = vtk.vtkIdList()
+        triPoints = vtk.vtkPoints()
+        vtk_cell.Triangulate(0, idList, triPoints)
+        points = []
+        for i in range(idList.GetNumberOfIds()):
+            points.append(idList.GetId(i))
+            
+        def create_chunks(the_list, chunks):
+            for i in range(0, len(the_list), chunks):
+                yield the_list[i:i+chunks]
+        num_nodes = dict()
+        num_nodes[vtk.VTK_QUADRATIC_TRIANGLE] = 3
+        num_nodes[vtk.VTK_QUADRATIC_TETRA] = 4
+        chunked_points = create_chunks(points, num_nodes[cell_type])
+        points = []
+        for p in chunked_points:
+            #
+            # TODO: Need to come up with a generalized way to deal with collapsing cells when
+            # a cell is added to a higher rank zone
+            #
+            if cell_type == vtk.VTK_QUADRATIC_TRIANGLE and zone_type == ZoneType.FETetra:
+                assert(len(p) == 3)
+                p = [p[0], p[1], p[2], p[2]]
+            points.append(p)
+    else:
+        points = []
+        for pt in range(cell.GetNumberOfPoints()):
+            points.append(cell.GetPointId(pt))
+    
+    # Adapt the point IDs to work with Tecplot's need to have collapsed brick elements
+    if cell_type == vtk.VTK_WEDGE:
+        assert(zone_type == ZoneType.FEBrick)
+        assert(len(points) == 6)
+        points = [points[0], points[1], points[2], points[2], points[3], points[4], points[5], points[5]]
+    elif cell_type == vtk.VTK_PYRAMID:
+        assert(zone_type == ZoneType.FEBrick)
+        assert(len(points) == 5)
+        points = [points[0], points[1], points[2], points[3], points[4], points[4], points[4], points[4]]
+    return points
+
+def get_node_map(vtk_dataset, zone_type):
     # There has got to be a faster way to do this
     nodemap = []
     for i in range(vtk_dataset.GetNumberOfCells()):
         cell = vtk_dataset.GetCell(i)
-        points = []
-        for pt in range(cell.GetNumberOfPoints()):
-            points.append(cell.GetPointId(pt))
-        nodemap.append(points)
+        points = get_cell_connectivity(cell, zone_type)
+        nodemap.extend(points)
     return nodemap
 
 def get_face_map(vtk_dataset, zone_type):
@@ -144,11 +189,10 @@ def get_face_map(vtk_dataset, zone_type):
                 face_map[pts] = (points, left_cell, cell_number)
     return face_map
 
-def add_connectivity_data(vtk_dataset, zone):
+def add_connectivity_data(vtk_dataset, zone, node_map):
     assert(is_unstructured_zone(zone.zone_type))
-    nodemap = get_node_map(vtk_dataset)
-    assert(len(nodemap) == len(zone.nodemap))
-    zone.nodemap[:] = nodemap
+    assert(len(node_map) == len(zone.nodemap))
+    zone.nodemap[:] = node_map
     
 def add_face_map(vtk_dataset, zone, face_map):
     assert(is_polytope_zone(zone.zone_type))
@@ -219,6 +263,12 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
     
         face_map = None
         if is_unstructured_zone(zn_type):
+            node_map = get_node_map(vtk_dataset, zn_type)
+            #
+            # For Quadratic data, we triangulate the cells so the node_map will report the
+            # true number of cells
+            #
+            num_cells = len(node_map)
             zone = tecplot_dataset.add_fe_zone(zn_type, zone_name, num_points, num_cells)
         elif is_polytope_zone(zn_type):
             face_map = get_face_map(vtk_dataset, zn_type)
@@ -245,7 +295,7 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
         if is_polytope_zone(zone.zone_type):
             add_face_map(vtk_dataset, zone, face_map)
         else:
-            add_connectivity_data(vtk_dataset, zone)
+            add_connectivity_data(vtk_dataset, zone, node_map)
     return zone
 
 def add_structured_grid(vtk_dataset, tecplot_dataset):
