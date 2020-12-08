@@ -4,6 +4,7 @@ import numpy as np
 import vtk
 import tecplot as tp
 from tecplot.constant import *
+import time
 
 
 def field_data_type(vtk_data_type):
@@ -14,6 +15,7 @@ def field_data_type(vtk_data_type):
     type_dict[vtk.VTK_INT]           = FieldDataType.Int16
     type_dict[vtk.VTK_UNSIGNED_INT]  = FieldDataType.Int16
     type_dict[vtk.VTK_LONG]          = FieldDataType.Int32
+    type_dict[vtk.VTK_LONG_LONG]     = FieldDataType.Int32
     type_dict[vtk.VTK_UNSIGNED_LONG] = FieldDataType.Int32
     type_dict[vtk.VTK_FLOAT]         = FieldDataType.Float
     type_dict[vtk.VTK_DOUBLE]        = FieldDataType.Double
@@ -22,16 +24,20 @@ def field_data_type(vtk_data_type):
 def zone_type(vtk_cell_type):
     type_dict = dict()
     type_dict[vtk.VTK_TRIANGLE] = ZoneType.FETriangle
+    type_dict[vtk.VTK_QUADRATIC_TRIANGLE] = ZoneType.FETriangle
     type_dict[vtk.VTK_QUAD]     = ZoneType.FEQuad 
     type_dict[vtk.VTK_TETRA]    = ZoneType.FETetra
+    type_dict[vtk.VTK_QUADRATIC_TETRA]    = ZoneType.FETetra
+    type_dict[vtk.VTK_VOXEL] = ZoneType.FEBrick
     type_dict[vtk.VTK_HEXAHEDRON] = ZoneType.FEBrick
-    # May need special code to create collapsed bricks
+    # Special code to create collapsed bricks
     type_dict[vtk.VTK_WEDGE] = ZoneType.FEBrick
     type_dict[vtk.VTK_PYRAMID] = ZoneType.FEBrick
     # Polytope
     type_dict[vtk.VTK_POLYGON] = ZoneType.FEPolygon
     type_dict[vtk.VTK_POLYHEDRON] = ZoneType.FEPolyhedron
     type_dict[vtk.VTK_CONVEX_POINT_SET] = ZoneType.FEPolyhedron
+    type_dict[vtk.VTK_HEXAGONAL_PRISM] = ZoneType.FEPolyhedron
     return type_dict[vtk_cell_type]
 
 def get_best_zone_type(vtk_cell_types):
@@ -110,15 +116,64 @@ def add_point_data(pd, zone):
 def add_cell_data(cd, zone):
     add_vtk_data(cd, zone, location=ValueLocation.CellCentered)
 
-def get_node_map(vtk_dataset):
+
+def get_cell_connectivity(vtk_cell, zone_type):
+    cell_type = vtk_cell.GetCellType()
+    if cell_type in [vtk.VTK_QUADRATIC_TRIANGLE, vtk.VTK_QUADRATIC_TETRA]:
+        idList = vtk.vtkIdList()
+        triPoints = vtk.vtkPoints()
+        vtk_cell.Triangulate(0, idList, triPoints)
+        points = []
+        for i in range(idList.GetNumberOfIds()):
+            points.append(idList.GetId(i))
+            
+        def create_chunks(the_list, chunks):
+            for i in range(0, len(the_list), chunks):
+                yield the_list[i:i+chunks]
+        num_nodes = dict()
+        num_nodes[vtk.VTK_QUADRATIC_TRIANGLE] = 3
+        num_nodes[vtk.VTK_QUADRATIC_TETRA] = 4
+        chunked_points = create_chunks(points, num_nodes[cell_type])
+        points = []
+        for p in chunked_points:
+            if cell_type == vtk.VTK_QUADRATIC_TRIANGLE and zone_type == ZoneType.FETetra:
+                assert(len(p) == 3)
+                p = [p[0], p[1], p[2], p[2]]
+            points.append(p)
+    else:
+        points = []
+        for pt in range(vtk_cell.GetNumberOfPoints()):
+            points.append(vtk_cell.GetPointId(pt))
+    
+    # Adapt the point IDs to work with Tecplot's need to have collapsed brick elements
+    if zone_type == ZoneType.FEQuad and cell_type == vtk.VTK_TRIANGLE:
+        assert(len(points) == 3)
+        points = [points[0], points[1], points[2], points[2]]
+    elif zone_type == ZoneType.FEBrick and cell_type == vtk.VTK_TETRA:
+        # If we're adding Tetrahedrons to a "mixed element" zone we need to form them as collapsed bricks
+        assert(len(points) == 4)
+        points = [points[0], points[1], points[2], points[2], points[3], points[3], points[3], points[3]]
+    elif cell_type == vtk.VTK_WEDGE:
+        assert(zone_type == ZoneType.FEBrick)
+        assert(len(points) == 6)
+        points = [points[0], points[1], points[2], points[2], points[3], points[4], points[5], points[5]]
+    elif cell_type == vtk.VTK_PYRAMID:
+        assert(zone_type == ZoneType.FEBrick)
+        assert(len(points) == 5)
+        points = [points[0], points[1], points[2], points[3], points[4], points[4], points[4], points[4]]
+    return points
+    
+def get_node_map(vtk_dataset, zone_type):
     # There has got to be a faster way to do this
     nodemap = []
     for i in range(vtk_dataset.GetNumberOfCells()):
         cell = vtk_dataset.GetCell(i)
-        points = []
-        for pt in range(cell.GetNumberOfPoints()):
-            points.append(cell.GetPointId(pt))
-        nodemap.append(points)
+        points = get_cell_connectivity(cell, zone_type)
+        if isinstance(points[0], list):
+            # We got a list of cells, which is what happens with high-order elements
+            nodemap.extend(points)
+        else:
+            nodemap.append(points)
     return nodemap
 
 def get_face_map(vtk_dataset, zone_type):
@@ -144,13 +199,12 @@ def get_face_map(vtk_dataset, zone_type):
                 face_map[pts] = (points, left_cell, cell_number)
     return face_map
 
-def add_connectivity_data(vtk_dataset, zone):
+def add_connectivity_data(zone, node_map):
     assert(is_unstructured_zone(zone.zone_type))
-    nodemap = get_node_map(vtk_dataset)
-    assert(len(nodemap) == len(zone.nodemap))
-    zone.nodemap[:] = nodemap
+    assert(len(node_map) == len(zone.nodemap))
+    zone.nodemap[:] = node_map
     
-def add_face_map(vtk_dataset, zone, face_map):
+def add_face_map(zone, face_map):
     assert(is_polytope_zone(zone.zone_type))
     assert(zone.num_faces == len(face_map))
     faces = []
@@ -192,12 +246,15 @@ def add_face_map(vtk_dataset, zone, face_map):
 #        _tecutil.DataFaceMapAssignElemToNodeMap(zone.facemap, nelems, faces_per_element, nodes_per_face, elem_to_nodemap)
 #    #zone.facemap.set_elementmap(tuple(elementmap))
     
+
 def add_unstructured_grid(vtk_dataset, tecplot_dataset):
     assert(vtk_dataset)
     assert(vtk_dataset.GetDataObjectType() in [vtk.VTK_UNSTRUCTURED_GRID, vtk.VTK_POLY_DATA])
     
     num_cells = vtk_dataset.GetNumberOfCells()
     num_points = vtk_dataset.GetNumberOfPoints()
+    if num_points == 0:
+        return
     
     if tecplot_dataset.num_variables == 0:
         # Add the XYZ variables - a dataset needs one variable before you can add a zone
@@ -216,15 +273,20 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
         if len(cell_types) > 1:
             print("Multiple cell types found: ", cell_types)
         zn_type = get_best_zone_type(cell_types)
+        print("Chose ZoneType: ", zn_type)
     
         face_map = None
+        node_map = None
         if is_unstructured_zone(zn_type):
+            node_map = get_node_map(vtk_dataset, zn_type)
+            num_cells = len(node_map)
             zone = tecplot_dataset.add_fe_zone(zn_type, zone_name, num_points, num_cells)
         elif is_polytope_zone(zn_type):
             face_map = get_face_map(vtk_dataset, zn_type)
             zone = tecplot_dataset.add_poly_zone(zn_type, zone_name, num_points, num_cells, len(face_map))
     else:
         # No Cells!
+        assert(num_points >= 1)
         zone = tecplot_dataset.add_ordered_zone(zone_name, (num_points,1,1))
 
     # Write XYZ values
@@ -243,10 +305,11 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
         cd = vtk_dataset.GetCellData()
         add_cell_data(cd, zone)
         if is_polytope_zone(zone.zone_type):
-            add_face_map(vtk_dataset, zone, face_map)
+            add_face_map(zone, face_map)
         else:
-            add_connectivity_data(vtk_dataset, zone)
+            add_connectivity_data(zone, node_map)
     return zone
+
 
 def add_structured_grid(vtk_dataset, tecplot_dataset):
     assert(vtk_dataset.GetDataObjectType() == vtk.VTK_STRUCTURED_GRID)
@@ -353,6 +416,9 @@ def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
     tp.new_layout()
     tecplot_dataset = tp.active_frame().dataset
     add_vtk_dataset(vtk_dataset, tecplot_dataset)
+    if tecplot_dataset.num_zones == 0:
+        print("No zones created.")
+        return
     for z in tecplot_dataset.zones():
         z.name = os.path.basename(vtk_file)
         if strand and solution_time:
@@ -366,7 +432,9 @@ if __name__ == '__main__':
     parser.add_argument("infile", help="VTK file to convert")
     parser.add_argument("outfile", help="Name of Tecplot PLT (must end in .plt)")
     args = parser.parse_args()
+    now = time.time()
     print("Converting: ", args.infile)
     convert_vtk_file(args.infile,args.outfile)
     print("File written to: ", args.outfile)
+    print("Elapsed: ", time.time()-now)
 
