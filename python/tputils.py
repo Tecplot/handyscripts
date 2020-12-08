@@ -54,7 +54,7 @@ def fieldmap_minmax(fieldmap, variable):
             limits = z.values(variable).minmax()
         else:
             low, high = z.values(variable).minmax()
-            limits = min(limits[0], low), max(limits[1], high)
+            limits = (min(limits[0], low), max(limits[1], high))
     return limits
 
 
