@@ -11,9 +11,11 @@ import tputils
     zone and variable. 
     
     Sample useage: 
-    
-    display_max_variable_value.py -c -v my_var_name -z myzone
-    display_max_variable_value.py -c -v my_var_name -s 1
+    Finding the maximum in a zone (named myzone) for a variable (myvariable):
+        display_max_variable_value.py -c -v my_var_name -z myzone
+
+    Finding the maximum for each zone of a strand (zero indexed, i.e. 0 is the first strand):
+        display_max_variable_value.py -c -v my_var_name -s 0
 
 """
 
