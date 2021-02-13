@@ -1,21 +1,22 @@
+import argparse
 import numpy as np
 import tecplot as tp
 from tecplot.exception import *
 from tecplot.constant import *
+import tputils
+
 
 """
     This script will find and display the maximum position on a specific 
     zone and variable. 
-    
-    To use: Load data into 360 and turn on PyTecplot Connections
-        Enter Zone and Variable name or ID (one based) when prompted. 
-        
-    Returns: New one point zone with scatter turned on in Red. 
-        Text box with maximum variable value identified. 
 
 """
 
-
+def is_unstructured_zone(zone):
+    return zone.zone_type in [ZoneType.FEBrick,ZoneType.FELineSeg,ZoneType.FEQuad,ZoneType.FETetra,ZoneType.FETriangle]
+        
+def is_polytope_zone(zone):
+    return zone.zone_type in [ZoneType.FEPolygon,ZoneType.FEPolyhedron]
 
 
 def find_maximum(zone, variable):
@@ -29,9 +30,9 @@ def find_maximum(zone, variable):
     arr = zone.values(variable)[:]
 
     # Find list index with variable max
-    # Use numpy.argmax() on the variable array to find the index of the maximum value
+    # Use numpy.argmax() on the variable array to find the node/cell index of the maximum value
     max_idx = np.argmax(arr)
-    print('Node/Cell # of max value: '+ str(max_idx))
+    # print('Node/Cell # of max value: '+ str(max_idx))
     
     # Get max value in specified zone
     maxval = zone.values(variable)[max_idx]
@@ -45,8 +46,7 @@ def find_maximum(zone, variable):
     
     
     location = zone.values(variable).location 
-    zonetype = zone.zone_type
-    print(zonetype)
+    
     if location == ValueLocation.Nodal :
     
         # Getting position of the node
@@ -56,37 +56,25 @@ def find_maximum(zone, variable):
         try: z_pos = z[max_idx]
         except: z_pos = 0
         
-    elif (location == ValueLocation.CellCentered and 
-        (zonetype == ZoneType.FEBrick or 
-        zonetype == ZoneType.FEQuad or 
-        zonetype == ZoneType.FETetra or
-        zonetype == ZoneType.FETriangle)):
-        
-        # CellCentered Classic FE type
-        
-        # Getting position of the cell center
-        nodes = zone.nodemap[max_idx]
-        x_pos = np.average(x[:][nodes])
-        y_pos = np.average(y[:][nodes])
-        try: z_pos = np.average(z[:][nodes])
-        except: z_pos = 0
-        
-    elif (location == ValueLocation.CellCentered and 
-        (zonetype == ZoneType.FEPolygon or 
-        zonetype == ZoneType.FEPolyhedron)):
-        
-        # CellCentered Polyhedral data
+    elif location == ValueLocation.CellCentered:
+        element = max_idx
+        if is_unstructured_zone(zone):
+            nodes = zone.nodemap[element]        
+        elif is_polytope_zone(zone):
+            fm = zone.facemap 
+            nodes = []
+            # get the number of faces associated with the element
+            num_faces = fm.num_faces(element) 
+            for f in range(num_faces):  
+                num_nodes = fm.num_nodes(f, element) # Get the number of nodes for each face
+                for n in range(num_nodes): 
+                    node = fm.node(f,n,element) # find all the nodes for all the faces
+                    if node not in nodes: # elimiate duplicates 
+                        nodes.append(node)
+        else: 
+            print('Structured data not supported') 
+            exit()
 
-        fm = zone.facemap
-        nodes = []
-        # get the number of faces associated with the element
-        num_faces = fm.num_faces(max_idx) 
-        for f in range(num_faces):  
-            num_nodes = fm.num_nodes(f, max_idx) # Get the number of nodes for each face
-            for n in range(num_nodes): 
-                node = fm.node(f,n,max_idx) # find all the nodes for all the faces
-                if node not in nodes: # elimiate duplicates 
-                    nodes.append(node)
         # Get the XYZ location of the the nodes of the element and calculate average
         x_pos = np.average(x[:][nodes])
         y_pos = np.average(y[:][nodes])
@@ -96,14 +84,17 @@ def find_maximum(zone, variable):
     else: 
         print("Unknown zone and cell type. Structured CellCentered data not supported") 
 
-    print('Location: ({:.3g}, {:.3g}, {:.3g})'.format(x_pos, y_pos, z_pos))
-    print('Max value: {:.5g}'.format(maxval))
+    #print('Location: ({:.3g}, {:.3g}, {:.3g})'.format(x_pos, y_pos, z_pos))
+    #print('Max value: {:.5g}'.format(maxval))
     
     return x_pos, y_pos, z_pos, maxval
     
-def create_scatter_point_zone(dataset, x_pos, y_pos, z_pos, znname='MAXVARCALC'):
+def create_scatter_point_zone(dataset, x_pos, y_pos, z_pos, 
+            znname='MAXVARCALC', sol_time=0, strand=0):
 
-    pointzone = dataset.add_ordered_zone(znname, 1)
+    pointzone = dataset.add_ordered_zone(znname, 1,
+        solution_time=sol_time, 
+        strand_id=strand)
     print("New Point Zone created.")
     axes = dataset.frame.plot().axes
     pointzone.values(axes.x_axis.variable)[0] = x_pos
@@ -128,7 +119,11 @@ def highlight_maximum(frame, pointzone, variable, maxvar):
     scatter.color=Color.RedOrange
     scatter.symbol().shape=GeomShape.Diamond
     scatter.line_thickness=0.3
+    #View Fit Surfaces
+    try: plot.view.fit_surfaces(consider_blanking=True)
+    except: None
 
+def draw_text_single_timestep(frame,pointzone, variable, maxvar):
     #draw text box displaying max variable
     print("Adding text on plot for maximum value.")
     text = list(filter(lambda t: t.text_string.startswith(pointzone.name), frame.texts()))
@@ -138,47 +133,73 @@ def highlight_maximum(frame, pointzone, variable, maxvar):
     else:
         frame.add_text(msg, (3, 97), bold=False)
 
-    #View Fit Surfaces
-    try: plot.view.fit_surfaces(consider_blanking=True)
-    except: None
+
+def draw_text_multiple_timestep(frame, aux_str, variable):
+    #draw text box displaying max variable from aux data 
+    active_offset = len(list(plot.active_fieldmaps)) #get last active fieldmaps
+    msg = "{} maximum: &(AUXZONE[ACTIVEOFFSET={}]:{})".format(variable.name, active_offset, aux_str) 
+    
+    text = list(filter(lambda t: t.text_string.startswith(variable.name), frame.texts()))
+    if text:
+        text[-1].text_string = msg
+    else:
+        frame.add_text(msg, (3, 97), bold=False)
+
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', action='store_true', help='Connected mode')
+    parser.add_argument('-v', '--var', required=True, help='Zone name or 0 based index')
+    parser.add_argument('-z', '--zone', help='Zone name or 0 based index')
+    parser.add_argument('-s', '--strand', type=int, help='Strand ID for transient zones')
+    args = parser.parse_args()
 
-    tp.session.connect()
-    #NOTE: Run this script on a data set already loaded into Tecplot 360
+    if args.c:
+        tp.session.connect()
+    
     frame = tp.active_frame()
     dataset = frame.dataset
     plot = frame.plot()
-
-    #select zone and variable
-    while True:
-        zone_id = input('Zone (name or 1 based index): ')
-        try:
-            zone_id = int(zone_id) - 1
-            if zone_id < 0:
-                continue
-        except: pass
-        zone = dataset.zone(zone_id)
-        if zone:
-            break
-        else:
-            print('No zone found for', zone_id)
-
-    while True:
-        var_id = input('Variable (name or 1 based index): ')
-        try:
-            var_id = int(var_id) - 1
-            if var_id < 0:
-                continue
-        except: pass
-        variable = dataset.variable(var_id)
-        if variable:
-            break
-        else:
-            print('No variable found for', var_id)
+    
+    
+    try: 
+        try: var = int(args.var)
+        except: var = args.var
+            
+        variable = dataset.variable(var)
+        print(variable)
+    except: 
+        print('unrecognized variable')
+        exit()
         
-    x,y,z, maxvar = find_maximum(zone, variable)
-    znname = "Maximum " + variable.name
-    pointzone = create_scatter_point_zone(dataset, x,y,z, znname)
-    highlight_maximum(frame, pointzone, variable, maxvar)
+    if args.zone: 
+        zone = dataset.zone(args.zone)          
+        x,y,z, maxvar = find_maximum(zone, variable)
+        znname = "Maximum " + variable.name
+        pointzone = create_scatter_point_zone(dataset, x,y,z, znname)
+        highlight_maximum(frame, pointzone, variable, maxvar)
+        draw_text_single_timestep(frame, pointzone, variable, maxvar)
+        
+        
+    elif args.strand: 
+        # loop through zones 
+        # Get zones associated with the strand 
+        zones_by_strands = tputils.get_zones_by_strand(dataset)
+        zns = zones_by_strands[args.strand]
+        aux_str = 'max_{}'.format(variable.name) # Create aux data string name
+        strand = tputils.max_strand(dataset) +1 # Strand number for the new point zones 
+        for zn in zns: 
+            x,y,z, maxvar = find_maximum(zn, variable)
+            print (zn.name, x,y,z, maxvar)
+            znname = "Maximum {} - t = {}".format(variable.name, zn.solution_time)
+            pointzone = create_scatter_point_zone(dataset, x,y,z, znname, zn.solution_time, strand)
+            pointzone.aux_data[aux_str] = str(maxvar)
+        highlight_maximum(frame, pointzone, variable, maxvar)
+        draw_text_multiple_timestep(frame,aux_str,variable) 
+        
+        
+            
+    else: 
+        print('Unrecoginzed zone') 
+        exit()
