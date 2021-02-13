@@ -12,8 +12,8 @@ import tputils
     
     Sample useage: 
     
-    display_max_variable_value.py -c -var my_var_name -zone myzone
-    display_max_variable_value.py -c -var my_var_name -strand 1
+    display_max_variable_value.py -c -v my_var_name -z myzone
+    display_max_variable_value.py -c -v my_var_name -s 1
 
 """
 
@@ -179,7 +179,10 @@ if __name__ == '__main__':
         exit()
         
     if args.zone: 
-        zone = dataset.zone(args.zone)          
+        try:
+            zone = dataset.zone(int(args.zone))
+        except ValueError:
+            zone = dataset.zone(args.zone)
         x,y,z, maxvar = find_maximum(zone, variable)
         znname = "Maximum " + variable.name
         pointzone = create_scatter_point_zone(dataset, x,y,z, znname)
@@ -206,5 +209,5 @@ if __name__ == '__main__':
         
             
     else: 
-        print('Unrecoginzed zone') 
+        print('Unrecognized zone') 
         exit()
