@@ -9,6 +9,11 @@ import tputils
 """
     This script will find and display the maximum position on a specific 
     zone and variable. 
+    
+    Sample useage: 
+    
+    display_max_variable_value.py -c -var my_var_name -zone myzone
+    display_max_variable_value.py -c -var my_var_name -strand 1
 
 """
 
