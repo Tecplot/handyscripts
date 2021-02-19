@@ -7,15 +7,18 @@ import tputils
 
 
 """
-    This script will find and display the maximum position on a specific 
+    This script will find and display the maximum position for a specific 
     zone and variable. 
     
     Sample useage: 
-    Finding the maximum in a zone (named myzone) for a variable (myvariable):
+    Finding the maximum of a variable (my_var_name) for a zone:
         display_max_variable_value.py -c -v my_var_name -z myzone
 
-    Finding the maximum for each zone of a strand (zero indexed, i.e. 0 is the first strand):
-        display_max_variable_value.py -c -v my_var_name -s 0
+    Finding the maximum of variable my_var_name for each zone of a strand:
+        display_max_variable_value.py -c -v my_var_name -s 1
+        
+    NOTE: This script assumes the data has be loaded into the Tecplot GUI, 
+    and it runs in connected mode.
 
 """
 
@@ -170,10 +173,9 @@ if __name__ == '__main__':
     plot = frame.plot()
     
     
+    try: var = int(args.var)
+    except: var = args.var
     try: 
-        try: var = int(args.var)
-        except: var = args.var
-            
         variable = dataset.variable(var)
         print(variable)
     except: 
@@ -181,10 +183,13 @@ if __name__ == '__main__':
         exit()
         
     if args.zone: 
-        try:
-            zone = dataset.zone(int(args.zone))
-        except ValueError:
-            zone = dataset.zone(args.zone)
+        try: zn = int(args.zone)
+        except: zn = args.zone
+        
+        try: zone = dataset.zone(zn)
+        except: 
+            print('unrecognized variable')
+            exit()
         x,y,z, maxvar = find_maximum(zone, variable)
         znname = "Maximum " + variable.name
         pointzone = create_scatter_point_zone(dataset, x,y,z, znname)
