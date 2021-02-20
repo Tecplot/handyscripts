@@ -19,8 +19,7 @@ def calcForcesMoments(method, surf, pressure, shear=["","",""], velocity=["","",
     - pressure, shear, velocity, dynamicVisc: the field variables names
     - surf: the surface zone(s) for the integration to be performed
     """
-    ds=tp.active_frame().dataset
-    surf=ds.zone(surf).index
+
     #Computes the unit vector normal to the surface
     tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
         command="Calculate Function='GRIDKUNITNORMAL' Normalization='None'"\
@@ -82,7 +81,7 @@ def calcForcesMoments(method, surf, pressure, shear=["","",""], velocity=["","",
         tp.data.operate.execute_equation(e,value_location=ValueLocation.CellCentered)
 
     for e in eq:#do the computation only on the zone(s) of interest
-        tp.data.operate.execute_equation(e,zones=surf,value_location=ValueLocation.CellCentered)
+        tp.data.operate.execute_equation(e,zones=[surf],value_location=ValueLocation.CellCentered)
 
 def createSlices(numPts, direction, minPos, maxPos):
     """
@@ -90,7 +89,9 @@ def createSlices(numPts, direction, minPos, maxPos):
     equally spaced from min to max
     in the given direction
     """
+
     p=tp.active_frame().plot()
+    ds = tp.active_frame().dataset
 
     p.show_slices=False
     sl=p.slice(0)
@@ -117,13 +118,16 @@ def createSlices(numPts, direction, minPos, maxPos):
 
     #Extract the slices to zones
     sl.show=True
-    p.show_slices=True
-    tp.macro.execute_command('''$!ExtractSlices 
-                                Group = 1
-                                ExtractMode = SingleZone''')
-    p.show_slices=False
+    
+    sl.extract()
+    slice_zones = list(ds.zones("Slice*")) # Get slice zones by name
 
-def intForcesMoments(ds,fr,sliceZnes,method, direction):
+    # This should work in PyTecplot 1.4+  and can replace the above 2 lines 
+    # slice_zones = sl.extract()
+
+    return slice_zones
+
+def intForcesMoments(sliceZnes,method, direction):
     """
     Loops over the sliceZnes and performs an integration of Forces and moments
     for each slice (Scalar integrals, variables are depending on the method).
@@ -131,7 +135,9 @@ def intForcesMoments(ds,fr,sliceZnes,method, direction):
     """
     #direction, norm_direction, fx,fy,fz,mx,my,mz
     forcesMoments=np.zeros((8,len(sliceZnes))) 
-
+    
+    ds = sliceZnes[0].dataset
+    fr = ds.frame
     #Retrieves Forces and Moments variables
     xAxisNr=ds.variable(direction).index
     if method == "Pressure":
@@ -148,12 +154,12 @@ def intForcesMoments(ds,fr,sliceZnes,method, direction):
 
     #Populates the returned array with the direction and integrated values
     for i,slc in enumerate(sliceZnes):
-        forcesMoments[(0,i)]=ds.zone(slc).values(xAxisNr)[0]
+        forcesMoments[(0,i)]= slc.values(xAxisNr)[0]
         for j,v in enumerate([fxNr,fyNr,fzNr,mxNr,myNr,mzNr]):
-            intCmde=("Integrate ["+"{}".format(slc)+"] VariableOption='Scalar'"\
+            intCmde=("Integrate ["+"{}".format(slc.index + 1)+"] VariableOption='Scalar'"\
                 + " XOrigin=0 YOrigin=0 ZOrigin=0"\
                 +" ScalarVar=" + "{}".format(v)\
-                + " Absolute='F' ExcludeBlanked='F' XVariable=1 YVariable=2 ZVariable=3"\
+                + " Absolute='F' ExcludeBlanked='F' XVariable=1 YVariable=2 ZVariable=3 "\
                 + "IntegrateOver='Cells' IntegrateBy='Zones'"\
                 + "IRange={MIN =1 MAX = 0 SKIP = 1}"\
                 + " JRange={MIN =1 MAX = 0 SKIP = 1}"\
@@ -176,12 +182,15 @@ def forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage):
     if newPage == True:
         tp.add_page()
         tp.active_page().name='ForcesMomentsVsSpan'
+        fr = tp.active_frame()
     else:
-        tp.active_page().add_frame()
-    tp.active_frame().name='ForcesMomentsVsSpan'
+        fr  = tp.active_page().add_frame()
+        tp.macro.execute_extended_command(command_processor_id='Multi Frame Manager',
+            command='TILEFRAMESHORIZ')
+    fr.name='ForcesMomentsVsSpan'
 
     #Creates a dataset to host the forces and moments matrix
-    ds2 = tp.active_frame().create_dataset('ForcesMomentsSpan',
+    ds2 = fr.create_dataset('ForcesMomentsSpan',
         ['{}'.format(direction), 'Span in {} direction, normalized'.format(direction),
         'Fx','Fy','Fz', 'Mx', 'My', 'Mz'])
     zne=ds2.add_ordered_zone('Forces and Moments',(len(forcesMoments[0])))
@@ -189,8 +198,8 @@ def forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage):
         zne.values(v)[:] = forcesMoments[v].ravel()
 
     #Defines the plot
-    tp.active_frame().plot_type=PlotType.XYLine
-    p = tp.active_frame().plot()
+    fr.plot_type=PlotType.XYLine
+    p = fr.plot()
 
     #Delete existing linemaps
     nLm=range(p.num_linemaps)
@@ -236,24 +245,27 @@ minPos=0.05
 maxPos=1.15
 
 #Integration parameters:
-m="Pressure and Velocity"#"Pressure" #"Pressure and Shear"
-s=1 #Zones numbers (surfaces to be computed), 
+mode = "Pressure and Velocity"#"Pressure" #"Pressure and Shear"
+surf_index = 1 #Zones numbers (surfaces to be computed), 
 #beware Tecplot indexes are 1-based, python indexes are 0-based
-p="Pressure"
+pressure_var_name="Pressure"
 sh=["Wall shear-1","Wall shear-2","Wall shear-3"]
 dVi="SA Turbulent Eddy Viscosity"#"Turbulent Viscosity"
 
 #ForcesVSSpan parameters
 normalized=True
-newPage=True
+newPage=False
 
 tp.session.connect()
 
 #Loading the data
+tp.new_layout()
 examples_dir = tp.session.tecplot_examples_directory()
 datafile = os.path.join(examples_dir, 'OneraM6wing', 'OneraM6_SU2_RANS.plt')
 ds = tp.data.load_tecplot(datafile)
-f=tp.active_frame()
+fr=tp.active_frame()
+
+surf_zone = ds.zone(surf_index)
 
 #setting the correct field variables
 tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
@@ -261,19 +273,16 @@ tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
         +" UVar=5 VVar=6 WVar=7 ID1='Pressure' Variable1=10 ID2='Density' Variable2=4")
 
 #calculates the forces and moments
-calcForcesMoments(m,s,p,shear=sh,dynamicVisc=dVi)
+calcForcesMoments(mode,surf_zone,pressure_var_name,shear=sh,dynamicVisc=dVi)
 
 #Creating nPts slices along the wing
-originalNumZnes=ds.num_zones
-createSlices(nPts,direction,minPos,maxPos)
-sliceZnes=np.arange(originalNumZnes,ds.num_zones)
-s=sliceZnes.tolist()
+slice_zones = createSlices(nPts,direction,minPos,maxPos)
 
 #Integrates the forces and moments on each slice
-forcesMoments=intForcesMoments(ds,f,s,m,direction)
+forcesMoments=intForcesMoments(slice_zones,mode,direction)
 
 #Plots the forces and moments VS span
 forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage)
 
 #Delete the extracted slices
-ds.delete_zones(s)
+#ds.delete_zones(s)
