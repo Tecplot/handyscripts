@@ -93,7 +93,7 @@ if __name__ == '__main__':
         for i, solution_time in enumerate(solution_times):
             image_file = args.imagebasename + "%04d.png" % (i)
             job_args.append((solution_time, args.imagewidth, args.supersample, image_file))
-            image_files = pool.map(save_image, job_args)
+        image_files = pool.map(save_image, job_args)
 
     finally:
         # !!! IMPORTANT !!!
