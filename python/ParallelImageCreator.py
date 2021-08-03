@@ -2,7 +2,7 @@
 This script runs in batch mode and exports images in parallel.
 
 Additional Python modules needed:
----------------
+---------------------------------
 multiprocessing
     A package that supports spawning processes
 atexit
