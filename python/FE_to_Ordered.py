@@ -30,7 +30,7 @@ def setup_base_FEZone():
     return ds
 
 
-def feLineSeg_to_ordered(fezone, ordered_out):
+def feLineSeg_to_ordered(fezone):
     print(fezone.zone_type)
     if fezone.zone_type == tp.constant.ZoneType.FELineSeg:
         print("Num Elements: ", fezone.num_elements)
@@ -40,25 +40,40 @@ def feLineSeg_to_ordered(fezone, ordered_out):
         # Convert to I ordered zone
         continue_line = True
         index_list = [nodes[0][0]]  # Seed with first value in list
-        cur_index = 0
-        nodes_T = map(list, zip(*nodes))[0]  # Transform nodes and only look at "left side"
-        print("Left hand side of Nodemap: ", nodes_T)
+        cur_cell = 0
+        # need lists not tuples (at least for nodes_R):
+        nodes_L = list(list(zip(*nodes))[0])  # Transform nodes and only look at "left side"
+        nodes_R = list(list(zip(*nodes))[1])  # Transform nodes and only look at "right side"
+        print("nodes_L: ", nodes_L)
+        print("nodes_R: ", nodes_R)
 
         while continue_line:
-            nextval = nodes[cur_index][1]  # Get the next RHS at the index defined by the last index
-
-            index_list.append(nextval)  # Add the next value into the point list
-            print(nextval)
-            try:
-                cur_index = nodes_T.index(nextval)  # Get the index of the next left hand side value
-            except:
+            nextnode = nodes_R[cur_cell]  # Get the next RHS at the index defined by the last index
+            index_list.append(nextnode)  # Add the next value into the point list
+            
+            nodes_R[cur_cell] = 'x'  # x index out to get second appearance if node idx exists twice on RHS.
+            print("nextnode: ", nextnode)
+            
+            if nextnode in nodes_L:
+                cur_cell = nodes_L.index(nextnode)
+            else:
+                if nextnode in nodes_R:  # look for second appearance of node index on RHS. That's why the 'x' has been set.
+                    cur_cell = nodes_R.index(nextnode)   
+                    nodes_L[cur_cell], nodes_R[cur_cell] = nodes_R[cur_cell],nodes_L[cur_cell]
+                else:
                 # Stops if no LHS of the coorisponds to the RSH, this happens if the line is not a loop.
+                    continue_line = False
+
+            if nextnode == nodes_L[0]:  # If line is a loop stop.
                 continue_line = False
 
-            if nextval == nodes[0][0]:  # If line is a loop stop.
-                continue_line = False
-
-        print(index_list)
+        #print("nodes_L: ", nodes_L)
+        #print("nodes_R: ", nodes_R)               
+        print("index list: ", index_list)
+        print()
+        
+        ordered_out = ds.add_ordered_zone(fezone.name, len(index_list))
+        
         for var in range(fezone.num_variables):  # For all variables
             # Get read/writeable access for specific Zone-Variable
             FE_vals = fezone.values(var)
@@ -84,7 +99,7 @@ for z in init_zones:
     # Setup a new zone with the same dimension as the FE Line zone
     ordered_zone = ds.add_ordered_zone(z.name, z.num_points)
     # Convert
-    feLineSeg_to_ordered(z, ordered_zone)
+    feLineSeg_to_ordered(z)
 
 ds.delete_zones(init_zones)
 tp.data.save_tecplot_ascii('extract_ordered.dat', use_point_format=True)
