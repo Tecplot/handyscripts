@@ -96,8 +96,6 @@ ds = setup_base_FEZone()
 
 init_zones = list(ds.zones())
 for z in init_zones:
-    # Setup a new zone with the same dimension as the FE Line zone
-    ordered_zone = ds.add_ordered_zone(z.name, z.num_points)
     # Convert
     feLineSeg_to_ordered(z)
 
