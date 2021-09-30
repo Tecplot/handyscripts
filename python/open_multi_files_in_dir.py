@@ -5,7 +5,7 @@ General usage:
     > python -O .\open_multi_files_in_dir.py
 
 Example usage with Linux batch mode:
-    > /path/to/tecplot360/bin/tec360-env -- python -O .\open_multi_files_in_dir.py
+    > /path/to/tecplot360/bin/tec360-env -- python -O open_multi_files_in_dir.py
 
 Necessary modules
 -----------------
@@ -25,7 +25,7 @@ This script can be used to loop through opening, plotting, and closing all the d
  updating the load_tecplot_szl() and glob() functions).
 
 To run this script in connected mode, we must first enable PyTecplot Connections via the
- Scripting menu (Scripting>PyTecplot Connections...).
+ Scripting menu (Scripting>PyTecplot Connections...). Then add a "-c" after the .py on the commandline.
 
 Note, this script uses f-strings, so if you have a version of Python before 3.6,
  you may need to use str.format() instead.
@@ -39,17 +39,14 @@ import os
 if '-c' in sys.argv:
     tp.session.connect()
 
-# Create a new layout:
-tp.new_layout()
-
 # Load multiple files with the same extension from the following directory:
-directory = r"path/to/datafiles"
+# directory = r"path/to/datafiles"
 # Or you can cd to the directory in the terminal with the data files, run the script and use the
 # following to get the path of the current working directory:
-#directory = os.getcwd()
+directory = os.getcwd()
 
 # glob the files in that directory based on extension:
-files = glob.glob(f"{directory}/*.szplt")
+files = glob.glob(os.path.join(directory, "*.szplt"))
 
 # Loop over the globbed files. These files can appended to one data set or
 # opened individually with tp.new_layout()--the latter is demonstrated below:
@@ -65,4 +62,8 @@ for file in files:
     plot.contour(0).variable_index=2 #setting contour group 1 variable
     plot.show_contour=True
     plot.show_slices=True
-    tp.export.save_png(f"{directory}/{os.path.basename(file)}.png") #saves the .png in the same dir as the data files
+    # ....
+    # export an image:
+    image_file = os.path.join(directory, os.path.basename(file)+".png") #.png path to the same dir as the data files
+    print(f"Saving an image to: {image_file}\n")
+    tp.export.save_png(f"{directory}/{os.path.basename(file)}.png") #saves the .png
