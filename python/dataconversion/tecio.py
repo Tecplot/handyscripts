@@ -302,6 +302,34 @@ def test_ordered(file_name, use_double):
     # 3x3 zone has 4 elements
     zone_write_values([1,2,3,4]) #cvals
     close_file()
+
+def test_ordered_ijk(file_name, use_double, ijk_dim):
+    open_file(file_name, "Title", ['x','y','z', 'c'], use_double)
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_NODECENTERED, # 'z'
+        VALUELOCATION_CELLCENTERED] # 'c'
+    # Use default values for non-positional arguments (like strand, solution_time, etc)
+    create_ordered_zone("Zone", ijk_dim, value_locations=value_locations)
+
+    x_ = np.linspace(0., ijk_dim[0], ijk_dim[0])
+    y_ = np.linspace(0., ijk_dim[1], ijk_dim[1])
+    z_ = np.linspace(0., ijk_dim[2], ijk_dim[2])
+    x, y = np.meshgrid(x_, y_, indexing='xy')
+    x = np.array([x]*ijk_dim[2])
+    y = np.array([y]*ijk_dim[2])
+    z = np.repeat(z_, ijk_dim[0]*ijk_dim[1])
+    zone_write_values(x.flatten()) #xvals
+    zone_write_values(y.flatten()) #yvals
+    zone_write_values(z.flatten()) #zvals
+    num_cells = 1
+    for i in ijk_dim:
+        if i == 1:
+            continue
+        num_cells *= i-1
+    zone_write_values(np.linspace(0,1,num_cells)) #cvals
+    close_file()
     
 def test_polygon(file_name, use_double):
     open_file(file_name, "Title", ['x','y','c'], use_double)
@@ -445,3 +473,9 @@ if "--testordered" in sys.argv:
     test_ordered("test_ordered_float.plt", False)
     test_ordered("test_ordered_double.szplt", True)
     test_ordered("test_ordered_float.szplt", False)
+
+    test_ordered_ijk("test_ordered_IJ.szplt", False, (3,4,1))
+    test_ordered_ijk("test_ordered_JK.szplt", False, (1,3,4))
+    test_ordered_ijk("test_ordered_IK.szplt", False, (3,1,4))
+    test_ordered_ijk("test_ordered_IJK.szplt", False, (3,4,5))
+

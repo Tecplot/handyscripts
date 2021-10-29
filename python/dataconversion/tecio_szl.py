@@ -254,8 +254,48 @@ def test_gridandsolution(grid_file, solution_file):
         close_file(solution_file_handle)
     close_file(grid_file_handle)
 
+def test_ordered_ijk(file_name, ijk_dim):
+    import numpy as np
+    var_names = ['x','y','z', 'c']
+    file_handle = open_file(file_name, "Title", var_names)
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_NODECENTERED, # 'z'
+        VALUELOCATION_CELLCENTERED] # 'c'
+    var_data_types = [FD_FLOAT]*len(var_names)
+    zone = create_ordered_zone(file_handle, "Zone", ijk_dim, value_locations=value_locations, var_data_types=var_data_types)
+
+    x_ = np.linspace(0., ijk_dim[0], ijk_dim[0])
+    y_ = np.linspace(0., ijk_dim[1], ijk_dim[1])
+    z_ = np.linspace(0., ijk_dim[2], ijk_dim[2])
+    x, y = np.meshgrid(x_, y_, indexing='xy')
+    x = np.array([x]*ijk_dim[2])
+    y = np.array([y]*ijk_dim[2])
+    z = np.repeat(z_, ijk_dim[0]*ijk_dim[1])
+
+    zone_write_float_values(file_handle, zone, 1, x.flatten())
+    zone_write_float_values(file_handle, zone, 2, y.flatten())
+    zone_write_float_values(file_handle, zone, 3, z.flatten())
+
+    num_cells = 1
+    for i in ijk_dim:
+        if i == 1:
+            continue
+        num_cells *= i-1
+    print(num_cells)
+    zone_write_float_values(file_handle, zone, 4, np.linspace(0,1,num_cells))
+
+    close_file(file_handle)
+
 if "--testgridandsolution" in sys.argv:
     test_gridandsolution("grid.szplt", "solution.szplt")
 
 if "--test" in sys.argv:
     test()
+
+if "--testordered" in sys.argv:
+    test_ordered_ijk("ij_ordered.szplt", (3,4,1))
+    test_ordered_ijk("jk_ordered.szplt", (1,3,4))
+    test_ordered_ijk("ijk_ordered.szplt", (3,4,5))
+    test_ordered_ijk("ik_ordered.szplt", (3,1,5))
