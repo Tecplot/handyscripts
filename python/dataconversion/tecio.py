@@ -190,6 +190,39 @@ def create_ordered_zone(
         raise Exception("create_ordered_zone Error")
     return ret
 
+def create_fe_zone(
+    zone_name,
+    zone_type,
+    num_nodes,
+    num_elements,
+    solution_time=0,
+    strand=0,
+    var_sharing=None,
+    passive_vars=None,
+    value_locations=None):
+
+    assert(zone_type == ZONETYPE_FELINESEG
+        or zone_type == ZONETYPE_FETRIANGLE
+        or zone_type == ZONETYPE_FEQUADRILATERAL
+        or zone_type == ZONETYPE_FETETRAHEDRON
+        or zone_type == ZONETYPE_FEBRICK)
+
+
+    ret = teczne(
+            zone_name = zone_name,
+            zone_type = zone_type,
+            imax=num_nodes,
+            jmax=num_elements,
+            kmax=1, # Ignored
+            solution_time = solution_time,
+            strand = strand,
+            var_sharing = var_sharing,
+            passive_vars = passive_vars,
+            value_locations = value_locations)
+    if ret != 0:
+        raise Exception("create_ordered_zone Error")
+    return ret
+
 def create_poly_zone(
     zone_name,
     zone_type,
@@ -224,6 +257,25 @@ def create_poly_zone(
         raise Exception("create_poly_zone Error")
     return ret
 
+#
+# This function may be called with a sub-set of the total number
+# of nodes in the zone.  But it must be called enough times
+# that all nodes for the zone are defined
+#
+def tecnode(nodes):
+    tecio.tecnode142.restype=ctypes.c_int32
+    tecio.tecnode142.argtypes=(
+            ctypes.POINTER(ctypes.c_int32), # Num Nodes
+            ctypes.POINTER(ctypes.c_int32)) # Node array
+
+    nodes = np.asarray(nodes,dtype=np.int32).flatten()
+    num_nodes = len(nodes)
+    ret = tecio.tecnode142(
+            ctypes.byref(ctypes.c_int32(num_nodes)),
+            ctypes.cast(nodes.ctypes.data, ctypes.POINTER(ctypes.c_int32)))
+    if ret != 0:
+        raise Exception("tecnode Error")
+    
 def tecpolyface(num_faces, face_node_counts, face_nodes, face_left_elems, face_right_elems):
     tecio.tecpolyface142.restype=ctypes.c_int32
     tecio.tecpolyface142.argtypes=(
@@ -330,6 +382,46 @@ def test_ordered_ijk(file_name, use_double, ijk_dim):
         num_cells *= i-1
     zone_write_values(np.linspace(0,1,num_cells)) #cvals
     close_file()
+
+def test_fe_triangle(file_name, use_double):
+    open_file(file_name, "Title", ['x','y','c'], use_double)
+
+    # Create triangle cells
+    num_nodes = 4
+    num_elements = 2
+
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_CELLCENTERED] # 'c'
+    
+    create_fe_zone(
+        "FE Triangle",
+        ZONETYPE_FETRIANGLE,
+        num_nodes,
+        num_elements,
+        value_locations=value_locations)
+
+    zone_pts = [
+        0,0,    # cell 1
+        1,0,    # cell 1 & 2
+        0.5,1,  # cell 1 & 2
+        1.5,0.5]# cell 2
+
+    x_pts = zone_pts[0::2]
+    y_pts = zone_pts[1::2]
+    zone_write_values(x_pts)
+    zone_write_values(y_pts)
+    zone_write_values([1,2]) # 'c' has two cell centered values
+
+    nodes = [[1, 2, 3], [2, 4, 3]]
+    tecnode(nodes)
+    # Could optionally call tecnode() multiple times
+    #tecnode(nodes[0])
+    #tecnode(nodes[1])
+
+    close_file()
+    
     
 def test_polygon(file_name, use_double):
     open_file(file_name, "Title", ['x','y','c'], use_double)
@@ -479,3 +571,6 @@ if "--testordered" in sys.argv:
     test_ordered_ijk("test_ordered_IK.szplt", False, (3,1,4))
     test_ordered_ijk("test_ordered_IJK.szplt", False, (3,4,5))
 
+if "--testfetriangle" in sys.argv:
+    test_fe_triangle("test_fe_triangle.plt", False)
+    test_fe_triangle("test_fe_triangle.szplt", False)
