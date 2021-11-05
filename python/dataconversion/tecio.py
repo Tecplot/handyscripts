@@ -1,8 +1,16 @@
 import ctypes
 import numpy as np
 import sys
-
-tecio = ctypes.cdll.LoadLibrary(r"C:\Program Files\Tecplot\Tecplot 360 EX Beta\bin\tecio.dll")
+import platform
+if platform.system() == "Windows":
+    tecio = ctypes.cdll.LoadLibrary(r"C:\Program Files\Tecplot\Tecplot 360 EX Beta\bin\tecio.dll")
+elif platform.system() == "Darwin":
+    tecio = ctypes.cdll.LoadLibrary("/Applications/Tecplot 360 EX 2021 R2/Tecplot 360 EX 2021 R2.app/Contents/Frameworks/libtecio.dylib")
+elif platform.system() == "Linux":
+    tecio = ctypes.cdll.LoadLibrary("/path/to/360/bin/libtecio.so")
+else:
+    print("Unsupported Platform. Exiting.")
+    exit()
 
 # Constants
 VALUELOCATION_CELLCENTERED = 0
@@ -275,7 +283,7 @@ def tecnode(nodes):
             ctypes.cast(nodes.ctypes.data, ctypes.POINTER(ctypes.c_int32)))
     if ret != 0:
         raise Exception("tecnode Error")
-    
+
 def tecpolyface(num_faces, face_node_counts, face_nodes, face_left_elems, face_right_elems):
     tecio.tecpolyface142.restype=ctypes.c_int32
     tecio.tecpolyface142.argtypes=(
@@ -308,7 +316,7 @@ def __zone_write_double_values(values):
     tecio.tecdat142.argtypes=(
             ctypes.POINTER(ctypes.c_int32), # NumPts
             ctypes.POINTER(ctypes.c_double), #values
-            ctypes.POINTER(ctypes.c_int32)) #isdouble 
+            ctypes.POINTER(ctypes.c_int32)) #isdouble
 
     isdouble = ctypes.c_int32(1)
     ret = tecio.tecdat142(
@@ -324,7 +332,7 @@ def __zone_write_float_values(values):
     tecio.tecdat142.argtypes=(
             ctypes.POINTER(ctypes.c_int32), # NumPts
             ctypes.POINTER(ctypes.c_float), #values
-            ctypes.POINTER(ctypes.c_int32)) #isdouble 
+            ctypes.POINTER(ctypes.c_int32)) #isdouble
 
     isdouble = ctypes.c_int32(0)
     ret = tecio.tecdat142(
@@ -394,7 +402,7 @@ def test_fe_triangle(file_name, use_double):
         VALUELOCATION_NODECENTERED, # 'x'
         VALUELOCATION_NODECENTERED, # 'y'
         VALUELOCATION_CELLCENTERED] # 'c'
-    
+
     create_fe_zone(
         "FE Triangle",
         ZONETYPE_FETRIANGLE,
@@ -421,8 +429,8 @@ def test_fe_triangle(file_name, use_double):
     #tecnode(nodes[1])
 
     close_file()
-    
-    
+
+
 def test_polygon(file_name, use_double):
     open_file(file_name, "Title", ['x','y','c'], use_double)
 
@@ -431,7 +439,7 @@ def test_polygon(file_name, use_double):
     num_elements = 2
     num_faces = 5
     total_num_face_nodes = 2 * num_faces
-    
+
     value_locations = [
         VALUELOCATION_NODECENTERED, # 'x'
         VALUELOCATION_NODECENTERED, # 'y'
@@ -445,7 +453,7 @@ def test_polygon(file_name, use_double):
         num_faces,
         total_num_face_nodes,
         value_locations=value_locations) # value_locations
-    
+
     zone_pts = [
         0,0,    # cell 1
         1,0,    # cell 1 & 2
@@ -476,14 +484,14 @@ def test_polygon(file_name, use_double):
 def test_polyhedron(file_name, use_double):
     open_file(file_name, "Title", ['x','y','z','c'], use_double)
 
-    # Create a brick-like polyhedral zone 
+    # Create a brick-like polyhedral zone
     num_nodes = 8
     num_elements = 1
     num_faces = 6
     total_num_face_nodes = 24 # 6 faces with 4 nodes per face
     face_node_counts = [4] * 6 # 6 faces with 4 nodes per face
     assert(len(face_node_counts) == num_faces)
-    
+
     value_locations = [
         VALUELOCATION_NODECENTERED, # 'x'
         VALUELOCATION_NODECENTERED, # 'y'
@@ -498,7 +506,7 @@ def test_polyhedron(file_name, use_double):
         num_faces,
         total_num_face_nodes,
         value_locations=value_locations) # value_locations
-    
+
     rect_pts = [
         0,3,0, # XYZ
         3,3,0, # XYZ
@@ -530,7 +538,7 @@ def test_polyhedron(file_name, use_double):
     right_elems = [1] * num_faces
     # Negative values in the element arrays indicate a connection to an element in another zone
     tecpolyface(num_faces, face_node_counts, face_nodes, left_elems, right_elems)
-        
+
     close_file()
 
 def test_gridandsolution(grid_file, solution_file):
