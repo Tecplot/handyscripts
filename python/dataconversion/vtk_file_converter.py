@@ -17,12 +17,14 @@ def field_data_type(vtk_data_type):
     type_dict[vtk.VTK_LONG]          = FieldDataType.Int32
     type_dict[vtk.VTK_LONG_LONG]     = FieldDataType.Int32
     type_dict[vtk.VTK_UNSIGNED_LONG] = FieldDataType.Int32
+    type_dict[vtk.VTK_ID_TYPE]       = FieldDataType.Int32
     type_dict[vtk.VTK_FLOAT]         = FieldDataType.Float
     type_dict[vtk.VTK_DOUBLE]        = FieldDataType.Double
     return type_dict[vtk_data_type]
 
 def zone_type(vtk_cell_type):
     type_dict = dict()
+    type_dict[vtk.VTK_LINE] = ZoneType.FELineSeg
     type_dict[vtk.VTK_TRIANGLE] = ZoneType.FETriangle
     type_dict[vtk.VTK_QUADRATIC_TRIANGLE] = ZoneType.FETriangle
     type_dict[vtk.VTK_QUAD]     = ZoneType.FEQuad 
@@ -58,6 +60,8 @@ def get_best_zone_type(vtk_cell_types):
         final_zone_type = ZoneType.FEQuad
     elif ZoneType.FETriangle in zone_types:
         final_zone_type = ZoneType.FETriangle
+    elif ZoneType.FELineSeg in zone_types:
+        final_zone_type = ZoneType.FELineSeg
     return final_zone_type      
 
 def is_unstructured_zone(zone_type):
@@ -87,6 +91,9 @@ def get_array_values(dims, arr, component):
 def add_vtk_data(data, zone, location=ValueLocation.Nodal):
     for i in range(data.GetNumberOfArrays()):
         arr = data.GetArray(i)
+        if arr == None:
+            print("Skipping empty array")
+            continue
         type = arr.GetDataType()
         fd_type = field_data_type(type)
         name = arr.GetName()
@@ -107,7 +114,7 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
                 values = get_array_values(zone.num_points, arr, component)
             else:
                 values = get_array_values(zone.num_elements, arr, component)
-
+            
             if fd_type in [FieldDataType.Float,FieldDataType.Double]:
                 variable.values(zone)[:] = values
             elif fd_type in [FieldDataType.Byte,FieldDataType.Int16]:
@@ -259,6 +266,7 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
     
     num_cells = vtk_dataset.GetNumberOfCells()
     num_points = vtk_dataset.GetNumberOfPoints()
+    print("Cells/Points: ", num_cells, num_points)
     if num_points == 0:
         return
     
@@ -400,7 +408,6 @@ def add_image_data(vtk_dataset, tecplot_dataset):
     
     return zone
     
-
 def add_vtk_dataset(vtk_dataset, tecplot_dataset):
     data_type = vtk_dataset.GetDataObjectType()
     if data_type in [vtk.VTK_UNSTRUCTURED_GRID, vtk.VTK_POLY_DATA]:
@@ -409,7 +416,9 @@ def add_vtk_dataset(vtk_dataset, tecplot_dataset):
         add_structured_grid(vtk_dataset, tecplot_dataset)
     elif data_type == vtk.VTK_IMAGE_DATA:
         add_image_data(vtk_dataset, tecplot_dataset)
-        
+    else:
+        print("Unrecognized DataType: ", data_type)
+
 def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
     reader = None
     if vtk_file.endswith(".vtu"):
@@ -420,6 +429,9 @@ def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
         reader = vtk.vtkXMLStructuredGridReader()
     elif vtk_file.endswith(".vti"):
         reader = vtk.vtkXMLImageDataReader()
+    elif vtk_file.endswith(".pdb"):
+        reader = vtk.vtkPDBReader()
+
     reader.SetFileName(vtk_file)
     reader.Update()
     vtk_dataset = reader.GetOutput()
