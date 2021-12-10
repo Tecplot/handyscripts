@@ -114,3 +114,4 @@ dmypy.json
 *.plt
 *.szplt
 blatch.log
+.DS_Store
