@@ -12,9 +12,6 @@ numpy
 os
     A module that provides functions to interact with the operating system. It
     is installed with Python.
-sys
-    A module that provides variables and functions to manipulate the Python
-    runtime environment. It is installed with Python.
 tecplot
     The PyTecplot module. See installation and documenation here:
     https://www.tecplot.com/docs/pytecplot/install.html
@@ -48,7 +45,6 @@ Known script limitations/issues:
    https://github.com/Tecplot/handyscripts
 """
 
-import sys
 import os
 import numpy as np
 import vtk
