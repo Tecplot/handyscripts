@@ -265,6 +265,22 @@ def create_poly_zone(
         raise Exception("create_poly_zone Error")
     return ret
 
+def tecflush(zones_to_retain):
+    tecio.tecflush142.restype=ctypes.c_int32
+    tecio.tecflush142.argtypes=(
+            ctypes.POINTER(ctypes.c_int32), # Num Zones
+            ctypes.POINTER(ctypes.c_int32)) # Zones array
+
+    zones_to_retain = np.asarray(zones_to_retain,dtype=np.int32).flatten()
+    if min(zones_to_retain) <= 0:
+        raise Exception("Zone numbers must be 1-based")
+    num_zones = len(zones_to_retain)
+    ret = tecio.tecflush142(
+            ctypes.byref(ctypes.c_int32(num_zones)),
+            ctypes.cast(zones_to_retain.ctypes.data, ctypes.POINTER(ctypes.c_int32)))
+    if ret != 0:
+        raise Exception("tecflush Error")
+
 #
 # This function may be called with a sub-set of the total number
 # of nodes in the zone.  But it must be called enough times
