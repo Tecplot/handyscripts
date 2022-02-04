@@ -1,3 +1,29 @@
+
+"""
+Creates a graphical user interface (GUI) that allows you to enter and execute Tecplot macro
+commands without having to create a *.mcr file.
+usage:
+
+    > python -O pyqt5_execute_macro_command.py
+
+Necessary modules
+-----------------
+tecplot
+    The PyTecplot package
+    https://pypi.org/project/pytecplot/
+PyQt5
+    Python bindings for the Qt cross platform application toolkit
+    https://pypi.org/project/PyQt5/
+
+Description
+-----------
+To run this script, first "Accept connections" in the Tecplot 360 user interface via
+the "Scripting>PyTecplot Connections..." dialog
+Running this script will launch a PyQt5 GUI that can accept Tecplot macro
+commands. When "Execute" is pressed in the GUI, the macro commands are saved to a
+temporary file, then executed, saving you the effort of creating a file yourself.
+"""
+
 import sys
 import os
 import tempfile

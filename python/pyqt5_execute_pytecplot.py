@@ -1,3 +1,30 @@
+"""
+Creates a graphical user interface (GUI) that allows you to enter and execute PyTecplot commands
+without having to create a *.py file. The GUI will also display any output created from the Python
+script.
+
+usage:
+    > python -O pyqt5_execute_pytecplot.py
+
+Necessary modules
+-----------------
+tecplot
+    The PyTecplot package
+    https://pypi.org/project/pytecplot/
+PyQt5
+    Python bindings for the Qt cross platform application toolkit
+    https://pypi.org/project/PyQt5/
+
+Description
+-----------
+To run this script, first "Accept connections" in the Tecplot 360 user interface via
+the "Scripting>PyTecplot Connections..." dialog
+Running this script will launch a PyQt5 GUI that can accept PyTecplot commands. When
+"Execute" is pressed in the GUI, the Python commands are saved to a temporary file,
+then executed, saving you the effort of creating a file yourself. Output from the script
+is displayed in the lower window of the GUI.
+"""
+
 import sys
 import os
 import tempfile
