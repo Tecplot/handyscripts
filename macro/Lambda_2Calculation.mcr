@@ -20,7 +20,7 @@ $!ALTERDATA EQUATION = '{Omga23} = 0.5*({dVdZ}-{dWdY})'
 #S2+Ohm2 tensor
 $!ALTERDATA EQUATION = '{s2o2_11} = {s11}**2 + {s12}**2 + {s13}**2 - {Omga12}**2 - {Omga13}**2'
 $!ALTERDATA EQUATION = '{s2o2_12} = {s11}*{s12} + {s12}*{s22} + {s13}*{s23} - {Omga13}*{Omga23}'
-$!ALTERDATA EQUATION = '{s2o2_13} = {s11}*{s13} + {s12}*{s23} + {s13}*{s33} - {Omga12}*{Omga23}'
+$!ALTERDATA EQUATION = '{s2o2_13} = {s11}*{s13} + {s12}*{s23} + {s13}*{s33} + {Omga12}*{Omga23}'
 $!ALTERDATA EQUATION = '{s2o2_22} = {s12}**2 + {s22}**2 + {s23}**2 - {Omga12}**2 - {Omga23}**2'
 $!ALTERDATA EQUATION = '{s2o2_23} = {s12}*{s13} + {s22}*{s23} + {s23}*{s33} - {Omga12}*{Omga13}'
 $!ALTERDATA EQUATION = '{s2o2_33} = {s13}**2 + {s23}**2 + {s33}**2 - {Omga13}**2 - {Omga23}**2'
