@@ -7,9 +7,12 @@ usage:
 Necessary modules
 -----------------
 tpmath
-    Useful Mathematical Utilities for PyTecplot
+    Useful mathematical utilities. This file can be found in the Tecplot GitHub:
+    https://github.com/Tecplot/handyscripts/blob/master/python/tpmath.py
+
 tputils
-    Generic PyTecplot Utilities
+    Generic PyTecplot utilities. This file can be found in the Tecplot GitHub:
+    https://github.com/Tecplot/handyscripts/blob/master/python/tputils.py
 
 
 Description
@@ -36,6 +39,7 @@ in_strand = input("Which strand do you want to average? Enter the strand number 
 with tp.session.suspend():
     dataset = tp.active_frame().dataset
 
+    # Example:
     # variables_to_average = [dataset.variable("salinity"), dataset.variable("temp")]
     # constant_variables = [dataset.variable("x"), dataset.variable("y")]
     variables_to_average = dataset.variables()
