@@ -14,9 +14,10 @@ f 1 2 3 4
 
 def write_vertices(zone, outfile):
     assert(type(zone) is not tp.data.zone.OrderedZone)
-    xvals = zone.values("X")[:]
-    yvals = zone.values("Y")[:]
-    zvals = zone.values("Z")[:]
+    # Assuming the first three variables are the spatial variables: X,Y,Z
+    xvals = zone.values(0)[:]
+    yvals = zone.values(1)[:]
+    zvals = zone.values(2)[:]
     for x,y,z in zip(xvals, yvals, zvals):
         outfile.write("v {} {} {}\n".format(x,y,z))
 
