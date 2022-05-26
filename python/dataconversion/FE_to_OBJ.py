@@ -1,3 +1,37 @@
+"""Convert and export FE surfaces into Wavefront (*.obj) format
+
+This provides another geometry export format besides converting FE data to STL
+files. See FE_to_STL.py for example:
+https://github.com/Tecplot/handyscripts/blob/master/python/dataconversion/FE_to_STL.py
+
+Usage:
+    > python FE_to_OBJ.py output_file.obj
+
+Necessary modules
+-----------------
+tecplot
+    Tecplot Python API (PyTecplot). More installation information here:
+    https://www.tecplot.com/docs/pytecplot/install.html
+
+Description
+-----------
+The most common use of this script is to convert streamtrace rods and ribbons
+into a geometry format which can be shared with the designers of a CFD simulation.
+
+One of the key bits of information is that the Python script only works with FE
+data - but Tecplot 360 extracts stream rods/ribbons as IJ-Ordered.  Using the
+Extract>Blanked Zone dialog is a trick to convert Ordered data to FE.
+
+Procedure:
+1. Before running this script, we must first enable PyTecplot Connections in the
+   Tecplot 360 GUI via Scripting>PyTecplot Connections... and activate Accept Connections
+2. In the GUI, place the volume streamtrace rods/ribbons
+3. Extract these streamtrace rods/ribbons (Data>Extract>Streamtraces...)
+4. Convert these zones to FE data using Data>Extract>Blanked Zones...
+   Select the extracted streamtrace zones and continue through the blanking message.
+5. From the command line, run this script
+"""
+
 import tecplot as tp
 from tecplot.constant import *
 
@@ -29,7 +63,7 @@ def write_poly_facets_fast(zone, outfile, offset):
 
     # Grab the internal element map for faster access
     emap = Elementmap(zone)
-    
+
     for e in range(zone.num_elements):
         unique_element_nodes = []
         for f in emap.faces(e):
@@ -50,7 +84,7 @@ def write_poly_facets_fast(zone, outfile, offset):
             for f in unique_element_nodes:
                 outfile.write(" {}".format(f,f))
         outfile.write("\n")
-    return max_facet        
+    return max_facet
 
 
 def write_fe_facets(zone, outfile, offset):
@@ -73,10 +107,10 @@ def write_facets(zone, outfile, offset):
     elif type(zone) is tp.data.zone.PolyFEZone:
         return write_poly_facets_fast(zone, outfile, offset)
     return 0
-        
+
 def write_zones_to_wavefront_obj(zones, file_name):
     with open(file_name, 'w') as f:
-        offset = 0 
+        offset = 0
         for z in zones:
             if z.rank == 3:
                 print("Skipping volume zone: ", z.name)
@@ -91,11 +125,11 @@ def write_zones_to_wavefront_obj(zones, file_name):
             f.write("g {}\n".format(z.name))
             write_vertices(z, f)
             offset = write_facets(z, f, offset)
-		
+
 def test():
     import sys
     outfile = sys.argv[1]
-    zone_pattern = input("Enter zone name to write (can use wild cards, e.g. 'Extracted Slice*')...")
+    zone_pattern = input("Enter zone name to write (can use wild cards, e.g. 'Extracted Streamtrace*')...")
     tp.session.connect()
     ds = tp.active_frame().dataset
     zones = ds.zones(zone_pattern)
