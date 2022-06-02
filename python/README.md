@@ -11,4 +11,4 @@ Once those pre-requisites are fulfilled, to run the script in connected mode:
 3.	Open a command prompt 
 4.	cd to the directory where you saved the script in step #3 above. 
 5.	Run the PyTecplot script, for example:
-        python <name_of_the_script.py>
+python <name_of_the_script.py>
