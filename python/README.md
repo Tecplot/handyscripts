@@ -1,4 +1,4 @@
-Tips for running the Python Scripts in this folder:
+Tips for running these PyTecplot scripts:
 
 Running a Python script, from GitHub for example, has a couple prerequisites:
 1.	You need a 64-bit version of Python 3 installed, such as Python 3.8, which is downloadable from https://www.python.org/downloads/
