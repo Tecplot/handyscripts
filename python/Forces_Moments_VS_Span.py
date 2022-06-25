@@ -13,75 +13,65 @@ A set of functions to:
 - plots the integration results against the distance
 '''
 
-def calcForcesMoments(method, surf, pressure, shear=["","",""], velocity=["","",""], dynamicVisc=""):
+def calcForcesMoments(method, surface_zones, pressure, shear=["","",""], velocity=["","",""], dynamicVisc=""):
     """Computes forces and moments on a surface:
     - method: pressureOnly, pressureShear, pressureVelocity
     - pressure, shear, velocity, dynamicVisc: the field variables names
-    - surf: the surface zone(s) for the integration to be performed
+    - surface_zones: the surface zone(s) for the integration to be performed
     """
 
     #Computes the unit vector normal to the surface
     tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
         command="Calculate Function='GRIDKUNITNORMAL' Normalization='None'"\
-            +" ValueLocation='Nodal' CalculateOnDemand='F'"\
+            +" ValueLocation='CellCentered' CalculateOnDemand='F'"\
                 +" UseMorePointsForFEGradientCalculations='F'")
         
     #Defines the string used in Tecplot's equations tool depending on the method
-    eqInit=['{mx} =0','{my}=0','{mz}=0']
+    eq = list()
     if method == "Pressure":
-        eqInit=eqInit+['{px} =0','{py}=0','{pz}=0']
-        eq=['{px} = -{'+'{}'.format(pressure)+'}* {X Grid K Unit Normal}']
-        eq=eq+['{py} = -{'+'{}'.format(pressure)+'}* {Y Grid K Unit Normal}']
-        eq=eq+['{pz} = -{'+'{}'.format(pressure)+'}* {Z Grid K Unit Normal}']
-        eq=eq+['{mx} = Y * {pz} - Z * {py}']
-        eq=eq+['{my} = Z * {px} - X * {pz}']
-        eq=eq+['{mz} = X * {py} - Y * {px}']
+        eq += ['{px} = -{'+'{}'.format(pressure)+'}* {X Grid K Unit Normal}']
+        eq += ['{py} = -{'+'{}'.format(pressure)+'}* {Y Grid K Unit Normal}']
+        eq += ['{pz} = -{'+'{}'.format(pressure)+'}* {Z Grid K Unit Normal}']
+        eq += ['{mx} = Y * {pz} - Z * {py}']
+        eq += ['{my} = Z * {px} - X * {pz}']
+        eq += ['{mz} = X * {py} - Y * {px}']
     elif method == "Pressure and Shear":
-        eqInit=eqInit+['{taux} =0','{tauy}=0','{tauz}=0']
-        eq=['{taux} = {'+'{}'.format(shear[0])+'}- {X Grid K Unit Normal} *{'\
+        eq += ['{taux} = {'+'{}'.format(shear[0])+'}- {X Grid K Unit Normal} *{'\
             +'{}'.format(pressure)+'}']
-        eq=eq+['{tauy} = {'+'{}'.format(shear[1])+'}- {Y Grid K Unit Normal} *{'\
+        eq += ['{tauy} = {'+'{}'.format(shear[1])+'}- {Y Grid K Unit Normal} *{'\
             +'{}'.format(pressure)+'}']
-        eq=eq+['{tauz} = {'+'{}'.format(shear[2])+'}- {Z Grid K Unit Normal} *{'\
+        eq += ['{tauz} = {'+'{}'.format(shear[2])+'}- {Z Grid K Unit Normal} *{'\
             +'{}'.format(pressure)+'}']
-        eq=eq+['{mx} = Y * {tauz} - Z * {tauy}']
-        eq=eq+['{my} = Z * {taux} - X * {tauz}']
-        eq=eq+['{mz} = X * {tauy} - Y * {taux}']
+        eq += ['{mx} = Y * {tauz} - Z * {tauy}']
+        eq += ['{my} = Z * {taux} - X * {tauz}']
+        eq += ['{mz} = X * {tauy} - Y * {taux}']
     elif method == "Pressure and Velocity":
         tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
             command="Calculate Function='VELOCITYGRADIENT' Normalization='None'"\
                 +" ValueLocation='Nodal' CalculateOnDemand='F'"\
                     +" UseMorePointsForFEGradientCalculations='F'")
-        eqInit=eqInit+[
-            '{taux} =0','{tauy}=0','{tauz}=0',
-            '{D}=0',
-            '{T11}=0','{T12}=0','{T13}=0',
-            '{T22}=0','{T23}=0','{T33}=0']
-        eq=['{D} = {dUdX} + {dVdY} + {dWdZ}']
-        eq=eq+['{T11} = {'+'{}'.format(dynamicVisc)+'} * (2 * {dUdX} - 2/3 * {D}) -{'\
+        eq += ['{D} = {dUdX} + {dVdY} + {dWdZ}']
+        eq += ['{T11} = {'+'{}'.format(dynamicVisc)+'} * (2 * {dUdX} - 2/3 * {D}) -{'\
             +'{}'.format(pressure)+'}']
-        eq=eq+['{T12} = {'+'{}'.format(dynamicVisc)+'} * ({dVdX} + {dUdY})']
-        eq=eq+['{T13} = {'+'{}'.format(dynamicVisc)+'} * ({dWdX} + {dUdZ})']
-        eq=eq+['{T22} = {'+'{}'.format(dynamicVisc)+'} * (2 * {dVdY} - 2/3 * {D}) -{'\
+        eq += ['{T12} = {'+'{}'.format(dynamicVisc)+'} * ({dVdX} + {dUdY})']
+        eq += ['{T13} = {'+'{}'.format(dynamicVisc)+'} * ({dWdX} + {dUdZ})']
+        eq += ['{T22} = {'+'{}'.format(dynamicVisc)+'} * (2 * {dVdY} - 2/3 * {D}) -{'\
             +'{}'.format(pressure)+'}']
-        eq=eq+['{T23} = {'+'{}'.format(dynamicVisc)+'} * ({dVdZ} + {dWdY})']
-        eq=eq+['{T33} = {'+'{}'.format(dynamicVisc)+'} * (2 * {dWdZ} - 2/3 * {D}) -{'\
+        eq += ['{T23} = {'+'{}'.format(dynamicVisc)+'} * ({dVdZ} + {dWdY})']
+        eq += ['{T33} = {'+'{}'.format(dynamicVisc)+'} * (2 * {dWdZ} - 2/3 * {D}) -{'\
             +'{}'.format(pressure)+'}']
-        eq=eq+['{taux} = {T11} * {X Grid K Unit Normal} + {T12} * {Y Grid K Unit Normal}'\
+        eq += ['{taux} = {T11} * {X Grid K Unit Normal} + {T12} * {Y Grid K Unit Normal}'\
             +' + {T13} * {Z Grid K Unit Normal}']
-        eq=eq+['{tauy} = {T12} * {X Grid K Unit Normal} + {T22} * {Y Grid K Unit Normal}'\
+        eq += ['{tauy} = {T12} * {X Grid K Unit Normal} + {T22} * {Y Grid K Unit Normal}'\
             +' + {T23} * {Z Grid K Unit Normal}']
-        eq=eq+['{tauz} = {T13} * {X Grid K Unit Normal} + {T23} * {Y Grid K Unit Normal}'\
+        eq += ['{tauz} = {T13} * {X Grid K Unit Normal} + {T23} * {Y Grid K Unit Normal}'\
             +' + {T33} * {Z Grid K Unit Normal}']
-        eq=eq+['{mx} = Y * {tauz} - Z * {tauy}']
-        eq=eq+['{my} = Z * {taux} - X * {tauz}']
-        eq=eq+['{mz} = X * {tauy} - Y * {taux}']
+        eq += ['{mx} = Y * {tauz} - Z * {tauy}']
+        eq += ['{my} = Z * {taux} - X * {tauz}']
+        eq += ['{mz} = X * {tauy} - Y * {taux}']
 
-    for e in eqInit:#creates variables for all zones
-        tp.data.operate.execute_equation(e,value_location=ValueLocation.CellCentered)
-
-    for e in eq:#do the computation only on the zone(s) of interest
-        tp.data.operate.execute_equation(e,zones=[surf],value_location=ValueLocation.CellCentered)
+    for e in eq: #do the computation only on the zone(s) of interest
+        tp.data.operate.execute_equation(e,zones=surface_zones,value_location=ValueLocation.CellCentered)
 
 def createSlices(numPts, direction, minPos, maxPos):
     """
@@ -141,24 +131,52 @@ def intForcesMoments(sliceZnes,method, direction):
     #Retrieves Forces and Moments variables
     xAxisNr=ds.variable(direction).index
     if method == "Pressure":
-        fxNr=ds.variable('px').index+1
-        fyNr=ds.variable('py').index+1
-        fzNr=ds.variable('pz').index+1
+        fxNr=ds.variable('px').index
+        fyNr=ds.variable('py').index
+        fzNr=ds.variable('pz').index
     else:
-        fxNr=ds.variable('taux').index+1
-        fyNr=ds.variable('tauy').index+1
-        fzNr=ds.variable('tauz').index+1
-    mxNr=ds.variable('mx').index+1
-    myNr=ds.variable('my').index+1
-    mzNr=ds.variable('mz').index+1
+        fxNr=ds.variable('taux').index
+        fyNr=ds.variable('tauy').index
+        fzNr=ds.variable('tauz').index
+    mxNr=ds.variable('mx').index
+    myNr=ds.variable('my').index
+    mzNr=ds.variable('mz').index
+
+    #
+    # Integration of slices needs to be done in the XY line plot type
+    # to ensure the integration is done with respect to 'dx'.  In 2D & 3D
+    # the integration is done with respect to 'sqrt(dX^2 + dY^2 [+ dZ^2])' 
+    #
+    old_plot_type = fr.plot_type
+    fr.plot_type=PlotType.XYLine
+    plot = fr.plot()
+    plot.delete_linemaps()
+    plot.add_linemap()
+    plot.linemaps(0).name='Map 0'
+    #
+    # NOTE: We're making the assumption that the XYZ variables are
+    # always number 0,1,2 (the first three in the dataset)
+    #
+    if direction == "X":
+        plot.linemaps(0).x_variable_index=1 # Y variable
+        plot.linemaps(0).y_variable_index=2 # Z variable
+    elif direction == "Y":
+        plot.linemaps(0).x_variable_index=0 # X variable
+        plot.linemaps(0).y_variable_index=2 # Z variable
+    elif direction == "Z":
+        plot.linemaps(0).x_variable_index=0 # X variable
+        plot.linemaps(0).y_variable_index=1 # Y variable
+    plot.linemaps(0).zone=sliceZnes[0]
+    plot.linemaps(0).show=True
+    plot.view.fit()
 
     #Populates the returned array with the direction and integrated values
-    for i,slc in enumerate(sliceZnes):
-        forcesMoments[(0,i)]= slc.values(xAxisNr)[0]
-        for j,v in enumerate([fxNr,fyNr,fzNr,mxNr,myNr,mzNr]):
-            intCmde=("Integrate ["+"{}".format(slc.index + 1)+"] VariableOption='Scalar'"\
+    for i,slice_zone in enumerate(sliceZnes):
+        forcesMoments[(0,i)]= slice_zone.values(xAxisNr)[0]
+        for j,var_index in enumerate([fxNr,fyNr,fzNr,mxNr,myNr,mzNr]):
+            intCmde=("Integrate ["+"{}".format(slice_zone.index + 1)+"] VariableOption='Scalar'"\
                 + " XOrigin=0 YOrigin=0 ZOrigin=0"\
-                +" ScalarVar=" + "{}".format(v)\
+                +" ScalarVar=" + "{}".format(var_index+1)\
                 + " Absolute='F' ExcludeBlanked='F' XVariable=1 YVariable=2 ZVariable=3 "\
                 + "IntegrateOver='Cells' IntegrateBy='Zones'"\
                 + "IRange={MIN =1 MAX = 0 SKIP = 1}"\
@@ -167,11 +185,15 @@ def intForcesMoments(sliceZnes,method, direction):
                 + " PlotResults='F' PlotAs='Result' TimeMin=0 TimeMax=0")
             tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
                 command=intCmde)
-            forcesMoments[(j+2,i)]=fr.aux_data['CFDA.INTEGRATION_TOTAL']
+            integrated_result = float(fr.aux_data['CFDA.INTEGRATION_TOTAL'])
+            forcesMoments[(j+2,i)] = integrated_result
+            slice_zone.aux_data[ds.variable(var_index).name] = integrated_result
+
 
     #Normalized direction:
     forcesMoments[1]=(forcesMoments[0]-forcesMoments[0].min())/(forcesMoments[0].max()-forcesMoments[0].min())
 
+    tp.active_frame().plot_type=old_plot_type
     return (forcesMoments)
 
 def forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage):
@@ -245,18 +267,19 @@ minPos=0.05
 maxPos=1.15
 
 #Integration parameters:
-mode = "Pressure and Velocity"#"Pressure" #"Pressure and Shear"
-surf_index = 1 #Zones numbers (surfaces to be computed), 
-#beware Tecplot indexes are 1-based, python indexes are 0-based
+mode = "Pressure and Velocity"
+#mode = "Pressure"
+#mode = "Pressure and Shear"
 pressure_var_name="Pressure"
 sh=["Wall shear-1","Wall shear-2","Wall shear-3"]
-dVi="SA Turbulent Eddy Viscosity"#"Turbulent Viscosity"
+dVi="SA Turbulent Eddy Viscosity" #"Turbulent Viscosity"
 
 #ForcesVSSpan parameters
 normalized=True
 newPage=False
 
 tp.session.connect()
+#tp.macro.execute_command("$!LoadAddon 'tecutiltools_combinezones'")
 
 #Loading the data
 tp.new_layout()
@@ -265,24 +288,33 @@ datafile = os.path.join(examples_dir, 'OneraM6wing', 'OneraM6_SU2_RANS.plt')
 ds = tp.data.load_tecplot(datafile)
 fr=tp.active_frame()
 
-surf_zone = ds.zone(surf_index)
 
 #setting the correct field variables
-tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
-    command="SetFieldVariables ConvectionVarsAreMomentum='T'"\
-        +" UVar=5 VVar=6 WVar=7 ID1='Pressure' Variable1=10 ID2='Density' Variable2=4")
+#
+# TODO - Make sure that the variable numbers and variable names
+#  are correct when doing Pressure and Velocity!!!
+#  NOTE - the variable numbers here are 1-based
+#
+if mode == "Pressure and Velocity":
+    tp.macro.execute_extended_command(command_processor_id='CFDAnalyzer4',
+        command="SetFieldVariables ConvectionVarsAreMomentum='T'"\
+            +" UVar=5 VVar=6 WVar=7 ID1='Pressure' Variable1=10 ID2='Density' Variable2=4")
 
-#calculates the forces and moments
-calcForcesMoments(mode,surf_zone,pressure_var_name,shear=sh,dynamicVisc=dVi)
+#calculates the forces and moments, limit the calculation to the surface zones to save time
+surface_zones = [z for z in ds.zones() if z.rank == 2]
+calcForcesMoments(mode,surface_zones,pressure_var_name,shear=sh,dynamicVisc=dVi)
 
-#Creating nPts slices along the wing
-slice_zones = createSlices(nPts,direction,minPos,maxPos)
+with tp.session.suspend():
+    #Creating nPts slices along the wing
+    slice_zones = createSlices(nPts,direction,minPos,maxPos)
 
-#Integrates the forces and moments on each slice
-forcesMoments=intForcesMoments(slice_zones,mode,direction)
+with tp.session.suspend():
+    #Integrates the forces and moments on each slice
+    forcesMoments=intForcesMoments(slice_zones,mode,direction)
 
-#Plots the forces and moments VS span
-forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage)
+with tp.session.suspend():
+    #Plots the forces and moments VS span
+    forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage)
 
 #Delete the extracted slices
 #ds.delete_zones(s)
