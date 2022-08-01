@@ -135,12 +135,12 @@ def get_axes_variable_assignment(plot):
         return None
     
 def duplicate_page(page):
-     """Returns a Page which is a duplicate of the provided Page.
+    """Returns a Page which is a duplicate of the provided Page.
 
     This example duplicates the active page and renames the new page to a given name:
 
         >>> new_page = duplicate_page(tp.active_page())
-        >>> new_page.name = "My New Page"
+        >>> new_page.name = 'My New Page'
     """
     with tp.session.suspend():
         # Add a new Page
