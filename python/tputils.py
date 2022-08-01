@@ -13,7 +13,8 @@ attach the dataset of the active frame a newly created frame:
 
 """
 import ctypes
-
+import tempfile
+import os
 import tecplot as tp
 from tecplot.constant import *
 from tecplot.exception import *
@@ -132,3 +133,38 @@ def get_axes_variable_assignment(plot):
         return [x_var, y_var, z_var]
     else:     
         return None
+    
+def duplicate_page(page):
+     """Returns a Page which is a duplicate of the provided Page.
+
+    This example duplicates the active page and renames the new page to a given name:
+
+        >>> new_page = duplicate_page(tp.active_page())
+        >>> new_page.name = "My New Page"
+    """
+    with tp.session.suspend():
+        # Add a new Page
+        new_page = tp.add_page()
+        default_frame = new_page.active_frame()
+        new_page.name = page.name + " - Duplicate"
+
+        # Get a temporary file name for the stylesheet
+        with tempfile.NamedTemporaryFile(suffix=".sty") as tmp_file:
+            stylesheet_fname = tmp_file.name
+
+        # For each frame in the source page, add a new frame in the destination page and
+        # attach the proper dataset and set the proper style
+        for src_frame in page.frames():
+            dst_frame = new_page.add_frame(position=src_frame.position, size=(src_frame.width, src_frame.height))
+            dst_frame.name = src_frame.name
+            src_frame.save_stylesheet(stylesheet_fname)
+            attach_dataset(dst_frame, src_frame.dataset)
+            dst_frame.load_stylesheet(stylesheet_fname)
+        
+        # Remove the default frame that was created when creating the new page
+        new_page.delete_frame(default_frame)
+
+        # Cleanup the temporary stylesheet
+        if os.path.exists(stylesheet_fname):
+            os.remove(stylesheet_fname)
+        return new_page
