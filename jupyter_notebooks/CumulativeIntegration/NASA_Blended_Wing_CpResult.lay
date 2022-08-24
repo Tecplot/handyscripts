@@ -1,0 +1,1333 @@
+#!MC 1410
+$!VarSet |LFDSFN1| = '"NASA_Blended_Wing.plt" "NASA_Blended_Wing_CpResult.plt"'
+$!VarSet |LFDSVL1| = '"x" "y" "z" "Cp" "Rho" "U" "V" "W" "Pressure" "Mach Number" "Cumulative Cp"'
+$!SetStyleBase Factory
+$!CreateColorMap 
+  Name = 'Sequential - Viridis'
+  NumControlPoints = 11
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 68
+      G = 1
+      B = 84
+      }
+    TrailRGB
+      {
+      R = 68
+      G = 1
+      B = 84
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.08163
+    LeadRGB
+      {
+      R = 72
+      G = 31
+      B = 112
+      }
+    TrailRGB
+      {
+      R = 72
+      G = 31
+      B = 112
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.1837
+    LeadRGB
+      {
+      R = 67
+      G = 63
+      B = 133
+      }
+    TrailRGB
+      {
+      R = 67
+      G = 63
+      B = 133
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.2857
+    LeadRGB
+      {
+      R = 54
+      G = 92
+      B = 141
+      }
+    TrailRGB
+      {
+      R = 54
+      G = 92
+      B = 141
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.3878
+    LeadRGB
+      {
+      R = 43
+      G = 117
+      B = 142
+      }
+    TrailRGB
+      {
+      R = 43
+      G = 117
+      B = 142
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.4898
+    LeadRGB
+      {
+      R = 33
+      G = 142
+      B = 141
+      }
+    TrailRGB
+      {
+      R = 33
+      G = 142
+      B = 141
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 0.5918
+    LeadRGB
+      {
+      R = 33
+      G = 166
+      B = 133
+      }
+    TrailRGB
+      {
+      R = 33
+      G = 166
+      B = 133
+      }
+    }
+  ControlPoint 8
+    {
+    ColorMapFraction = 0.6939
+    LeadRGB
+      {
+      R = 64
+      G = 189
+      B = 114
+      }
+    TrailRGB
+      {
+      R = 64
+      G = 189
+      B = 114
+      }
+    }
+  ControlPoint 9
+    {
+    ColorMapFraction = 0.7959
+    LeadRGB
+      {
+      R = 119
+      G = 209
+      B = 83
+      }
+    TrailRGB
+      {
+      R = 119
+      G = 209
+      B = 83
+      }
+    }
+  ControlPoint 10
+    {
+    ColorMapFraction = 0.898
+    LeadRGB
+      {
+      R = 186
+      G = 222
+      B = 40
+      }
+    TrailRGB
+      {
+      R = 186
+      G = 222
+      B = 40
+      }
+    }
+  ControlPoint 11
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 253
+      G = 231
+      B = 37
+      }
+    TrailRGB
+      {
+      R = 253
+      G = 231
+      B = 37
+      }
+    }
+$!BasicColor 
+  Custom1
+    {
+    R = 119
+    G = 119
+    B = 119
+    }
+  Custom2
+    {
+    R = 238
+    G = 238
+    B = 238
+    }
+  Custom3
+    {
+    R = 254
+    G = 229
+    B = 217
+    }
+  Custom4
+    {
+    R = 255
+    B = 212
+    }
+  Custom5
+    {
+    R = 237
+    G = 248
+    B = 233
+    }
+  Custom6
+    {
+    R = 240
+    G = 249
+    B = 232
+    }
+  Custom7
+    {
+    R = 239
+    G = 243
+    }
+  Custom8
+    {
+    R = 242
+    G = 240
+    B = 247
+    }
+  Custom9
+    {
+    R = 102
+    G = 102
+    B = 102
+    }
+  Custom10
+    {
+    R = 221
+    G = 221
+    B = 221
+    }
+  Custom11
+    {
+    R = 252
+    G = 187
+    B = 161
+    }
+  Custom12
+    {
+    R = 254
+    G = 227
+    B = 145
+    }
+  Custom13
+    {
+    R = 199
+    G = 233
+    B = 192
+    }
+  Custom14
+    {
+    R = 204
+    G = 235
+    B = 197
+    }
+  Custom15
+    {
+    R = 198
+    G = 219
+    B = 239
+    }
+  Custom16
+    {
+    R = 218
+    G = 218
+    B = 235
+    }
+  Custom17
+    {
+    B = 85
+    }
+  Custom18
+    {
+    R = 204
+    G = 204
+    B = 204
+    }
+  Custom19
+    {
+    R = 252
+    G = 146
+    B = 114
+    }
+  Custom20
+    {
+    R = 254
+    G = 196
+    B = 79
+    }
+  Custom21
+    {
+    R = 161
+    G = 217
+    B = 155
+    }
+  Custom22
+    {
+    R = 168
+    G = 221
+    B = 181
+    }
+  Custom23
+    {
+    R = 158
+    G = 202
+    B = 225
+    }
+  Custom24
+    {
+    R = 188
+    G = 189
+    B = 220
+    }
+  Custom25
+    {
+    R = 68
+    G = 68
+    B = 68
+    }
+  Custom26
+    {
+    R = 187
+    G = 187
+    B = 187
+    }
+  Custom27
+    {
+    R = 251
+    G = 106
+    B = 74
+    }
+  Custom28
+    {
+    R = 254
+    G = 153
+    B = 41
+    }
+  Custom29
+    {
+    R = 116
+    G = 196
+    B = 118
+    }
+  Custom30
+    {
+    R = 123
+    G = 204
+    B = 196
+    }
+  Custom31
+    {
+    R = 107
+    G = 174
+    B = 214
+    }
+  Custom32
+    {
+    R = 158
+    G = 154
+    B = 200
+    }
+  Custom33
+    {
+    R = 51
+    G = 51
+    B = 51
+    }
+  Custom34
+    {
+    G = 170
+    B = 170
+    }
+  Custom35
+    {
+    R = 239
+    G = 59
+    B = 44
+    }
+  Custom36
+    {
+    R = 236
+    G = 112
+    B = 20
+    }
+  Custom37
+    {
+    R = 65
+    G = 171
+    B = 93
+    }
+  Custom38
+    {
+    R = 78
+    G = 179
+    B = 211
+    }
+  Custom39
+    {
+    R = 66
+    G = 146
+    B = 198
+    }
+  Custom40
+    {
+    R = 128
+    G = 125
+    B = 186
+    }
+  Custom41
+    {
+    R = 34
+    G = 34
+    B = 34
+    }
+  Custom42
+    {
+    R = 153
+    G = 153
+    B = 153
+    }
+  Custom43
+    {
+    R = 203
+    G = 24
+    B = 29
+    }
+  Custom44
+    {
+    R = 204
+    G = 76
+    B = 2
+    }
+  Custom45
+    {
+    R = 35
+    G = 139
+    B = 69
+    }
+  Custom46
+    {
+    R = 43
+    G = 140
+    B = 190
+    }
+  Custom47
+    {
+    R = 33
+    G = 113
+    B = 181
+    }
+  Custom48
+    {
+    R = 106
+    G = 81
+    B = 163
+    }
+  Custom49
+    {
+    R = 17
+    G = 17
+    B = 17
+    }
+  Custom50
+    {
+    R = 136
+    G = 136
+    B = 136
+    }
+  Custom51
+    {
+    R = 153
+    G = 0
+    B = 13
+    }
+  Custom52
+    {
+    R = 140
+    G = 45
+    B = 4
+    }
+  Custom53
+    {
+    R = 0
+    G = 90
+    B = 50
+    }
+  Custom54
+    {
+    R = 8
+    G = 88
+    B = 158
+    }
+  Custom55
+    {
+    R = 8
+    G = 69
+    B = 148
+    }
+  Custom56
+    {
+    R = 74
+    G = 20
+    B = 134
+    }
+$!GlobalPaper 
+  PaperSizeInfo
+    {
+    Letter
+      {
+      Width = 8.5
+      Height = 11
+      LeftHardClipOffset = 0.125
+      RightHardClipOffset = 0.125
+      TopHardClipOffset = 0.125
+      BottomHardClipOffset = 0.125
+      }
+    }
+$!Page 
+  Name = 'Untitled'
+  PaperAttributes
+    {
+    BackgroundColor = White
+    IsTransparent = Yes
+    OrientPortrait = No
+    ShowGrid = Yes
+    ShowRuler = No
+    ShowPaper = No
+    PaperSize = Letter
+    RulerSpacing = OneInch
+    PaperGridSpacing = HalfInch
+    RegionInWorkArea
+      {
+      X1 = 1
+      Y1 = 0.25
+      X2 = 10
+      Y2 = 8.25
+      }
+    }
+### Frame Number 1 ###
+$!ReadDataSet  '|LFDSFN1|'
+  InitialPlotType = Cartesian3D
+  IncludeText = No
+  IncludeGeom = No
+  ResetStyle = No
+  AssignStrandIDs = Yes
+  VarLoadMode = ByName
+  VarNameList = '|LFDSVL1|'
+$!RemoveVar |LFDSVL1|
+$!RemoveVar |LFDSFN1|
+$!FrameLayout 
+  ShowHeader = No
+  IsTransparent = Yes
+  HeaderColor = Red
+  XYPos
+    {
+    X = 0.73298
+    Y = 0.6872
+    }
+  Width = 9.6107
+  Height = 6.6961
+$!ThreeDAxis 
+  AspectRatioLimit = 25
+  BoxAspectRatioLimit = 25
+$!PlotType  = Cartesian3D
+$!FrameName  = 'Frame 001'
+$!GlobalTime 
+  SolutionTime = 0
+$!ActiveFieldMaps  =  [1-2]
+$!GlobalRGB 
+  RangeMin = 0
+  RangeMax = 1
+$!GlobalContour  1
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  2
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  3
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  4
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  5
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  6
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  7
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalContour  8
+  ColorMapName = 'Sequential - Viridis'
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 95
+      }
+    }
+  ColorMapFilter
+    {
+    ContinuousColor
+      {
+      CMin = 0
+      CMax = 1
+      }
+    }
+$!GlobalScatter 
+  Legend
+    {
+    XYPos
+      {
+      X = 95
+      }
+    }
+  RefScatSymbol
+    {
+    Color = Red
+    FillColor = Red
+    }
+$!FieldMap  [1]
+  Mesh
+    {
+    Color = Black
+    }
+  Contour
+    {
+    ContourType = Flood
+    Color = Black
+    UseLightingEffect = Yes
+    }
+  Vector
+    {
+    Color = Black
+    }
+  Scatter
+    {
+    Color = Black
+    }
+  Shade
+    {
+    Color = Custom2
+    }
+  EdgeLayer
+    {
+    Show = Yes
+    Color = Black
+    LineThickness = 0.1
+    }
+  Points
+    {
+    PointsToPlot = SurfaceNodes
+    }
+  Surfaces
+    {
+    SurfacesToPlot = KPlanes
+    IRange
+      {
+      Max = 1
+      }
+    }
+  VolumeMode
+    {
+    VolumeObjectsToPlot
+      {
+      ShowIsosurfaces = No
+      ShowSlices = No
+      ShowStreamtraces = No
+      }
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!FieldMap  [2]
+  Mesh
+    {
+    Color = Black
+    }
+  Contour
+    {
+    ContourType = Flood
+    Color = Black
+    UseLightingEffect = Yes
+    }
+  Vector
+    {
+    Color = Black
+    }
+  Scatter
+    {
+    Color = Black
+    }
+  Shade
+    {
+    Color = Custom2
+    }
+  EdgeLayer
+    {
+    Show = No
+    Color = Black
+    LineThickness = 0.1
+    }
+  Points
+    {
+    PointsToPlot = SurfaceNodes
+    }
+  Surfaces
+    {
+    SurfacesToPlot = KPlanes
+    IRange
+      {
+      Max = 1
+      }
+    }
+  VolumeMode
+    {
+    VolumeObjectsToPlot
+      {
+      ShowIsosurfaces = No
+      ShowSlices = No
+      ShowStreamtraces = No
+      }
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!ThreeDAxis 
+  XDetail
+    {
+    Var = 'x'
+    }
+  YDetail
+    {
+    Var = 'y'
+    }
+  ZDetail
+    {
+    Var = 'z'
+    }
+$!View Fit
+$!ThreeDAxis 
+  AxisMode = XYZDependent
+  XYDepXToYRatio = 1
+  DepXToYRatio = 1
+  DepXToZRatio = 1
+  FrameAxis
+    {
+    Show = No
+    XYPos
+      {
+      X = 52.598
+      Y = 85.344
+      }
+    }
+$!ThreeDAxis 
+  XDetail
+    {
+    ShowAxis = No
+    RangeMin = -7.419994354248046875
+    RangeMax = 155.81988143920898438
+    GRSpacing = 50
+    AxisLine
+      {
+      Edge = 2
+      }
+    }
+$!ThreeDAxis 
+  YDetail
+    {
+    ShowAxis = No
+    RangeMin = -117.14995820000000037
+    RangeMax = 117.14995820000000037
+    GRSpacing = 100
+    AxisLine
+      {
+      Edge = 3
+      }
+    }
+$!ThreeDAxis 
+  ZDetail
+    {
+    ShowAxis = No
+    RangeMin = -14.159562050000001676
+    RangeMax = 22.959059050000000468
+    GRSpacing = 10
+    AxisLine
+      {
+      Edge = 2
+      }
+    }
+$!IsoSurfaceAttributes  1
+  IsoSurfaceSelection = OneSpecificValue
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  2
+  DefinitionContourGroup = 2
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 2
+    FloodColoring = Group2
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  3
+  DefinitionContourGroup = 3
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 3
+    FloodColoring = Group3
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  4
+  DefinitionContourGroup = 4
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 4
+    FloodColoring = Group4
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  5
+  DefinitionContourGroup = 5
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 5
+    FloodColoring = Group5
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  6
+  DefinitionContourGroup = 6
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 6
+    FloodColoring = Group6
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  7
+  DefinitionContourGroup = 7
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 7
+    FloodColoring = Group7
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!IsoSurfaceAttributes  8
+  DefinitionContourGroup = 8
+  IsoSurfaceSelection = OneSpecificValue
+  Contour
+    {
+    LineContourGroup = 8
+    FloodColoring = Group8
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    }
+$!SliceAttributes  1
+  PrimaryPosition
+    {
+    X = 0
+    Y = 0
+    Z = 0
+    I = 1
+    J = 1
+    K = 1
+    }
+  StartPosition
+    {
+    X = 7.41999435425
+    Y = -95.8499658
+    Z = -10.78514195
+    }
+  EndPosition
+    {
+    X = 140.979892731
+    Y = 95.8499658
+    Z = 19.58463895
+    }
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+  SliceConstraint
+    {
+    Include = No
+    Origin
+      {
+      X = 0
+      Y = 0
+      Z = 0
+      }
+    BoxDimension
+      {
+      X = 0
+      Y = 0
+      Z = 0
+      }
+    }
+$!SliceAttributes  2
+  SliceSurface = YPlanes
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!SliceAttributes  3
+  SliceSurface = ZPlanes
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!SliceAttributes  4
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!SliceAttributes  5
+  SliceSurface = YPlanes
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!SliceAttributes  6
+  SliceSurface = ZPlanes
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!SliceAttributes  7
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!SliceAttributes  8
+  SliceSurface = YPlanes
+  EdgeLayer
+    {
+    Show = No
+    }
+  Effects
+    {
+    LightingEffect = Gouraud
+    SurfaceTranslucency = 10
+    }
+$!StreamAttributes 
+  StreamTiming
+    {
+    MarkSize = 1
+    MarkSymbol
+      {
+      GeomShape = Sphere
+      }
+    }
+  RodRibbon
+    {
+    Effects
+      {
+      LightingEffect = Gouraud
+      }
+    }
+  MaxSteps = 10000
+$!GlobalThreeD 
+  AxisScaleFact
+    {
+    X = 1
+    Y = 1
+    Z = 1
+    }
+  RotateOrigin
+    {
+    X = 74.19994354248047
+    Y = 0
+    Z = 4.399748499999999
+    }
+  LightSource
+    {
+    XYZDirection
+      {
+      X = -0.2
+      Y = -0.2
+      Z = 0.9591663046625438
+      }
+    Intensity = 75
+    BackgroundLight = 25
+    IncludeSpecular = Yes
+    SpecularIntensity = 40
+    SpecularShininess = 60
+    }
+  LineLiftFraction = 0.2
+  SymbolLiftFraction = 0.6
+  VectorLiftFraction = 0.7
+  NearPlaneFraction = 0.1
+$!ThreeDView 
+  PSIAngle = 90
+  ThetaAngle = 0
+  ViewerPosition
+    {
+    X = 66.89870960067284
+    Y = -1322.422130446789
+    Z = 29.28354590266146
+    }
+  ViewWidth = 186.703
+$!FieldLayers 
+  ShowMesh = No
+  ShowShade = Yes
+  ShowEdge = No
+$!StreamtraceLayers 
+  Show = No
+$!Linking 
+  BetweenFrames
+    {
+    LinkFrameSizeAndPosition = Yes
+    }
+### Frame Number 2 ###
+$!CreateNewFrame 
+$!FrameLayout 
+  ShowHeader = No
+  IsTransparent = Yes
+  HeaderColor = Red
+  XYPos
+    {
+    X = 0.73298
+    Y = 0.6872
+    }
+  Width = 9.6107
+  Height = 6.6961
+$!ThreeDAxis 
+  AspectRatioLimit = 25
+  BoxAspectRatioLimit = 25
+$!PlotType  = XYLine
+$!FrameName  = 'Frame 002'
+$!GlobalTime 
+  SolutionTime = 0
+$!DeleteLineMaps 
+$!ActiveLineMaps  =  [1-2]
+$!GlobalLinePlot 
+  DataLabels
+    {
+    DistanceSkip = 5
+    }
+  Legend
+    {
+    Show = Yes
+    Box
+      {
+      BoxType = None
+      }
+    XYPos
+      {
+      X = 49.164
+      Y = 97.994
+      }
+    }
+$!LineMap  [1]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 'x'
+    YAxisVar = 'Cp'
+    }
+  Lines
+    {
+    Color = Red
+    }
+  Symbols
+    {
+    SymbolShape
+      {
+      GeomShape = Circle
+      }
+    Color = Red
+    FillMode = UseLineColor
+    FillColor = Red
+    Size = 1
+    Skipping = 2
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [2]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 'x'
+    YAxisVar = 'Cumulative Cp'
+    }
+  Lines
+    {
+    Color = Blue
+    }
+  Symbols
+    {
+    Color = Blue
+    FillMode = UseLineColor
+    FillColor = Red
+    Size = 1
+    Skipping = 2
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!XYLineAxis 
+  DepXToYRatio = 1
+  ViewportPosition
+    {
+    X1 = 10.526
+    Y1 = 8.5945
+    X2 = 97.577
+    Y2 = 97.851
+    }
+  ViewportTopSnapTarget = 97.8510882016
+$!XYLineAxis 
+  XDetail 1
+    {
+    RangeMin = -7.711951989637081617
+    RangeMax = 156.6985368071569269
+    GRSpacing = 20
+    }
+$!XYLineAxis 
+  YDetail 1
+    {
+    RangeMin = -4300
+    RangeMax = 690.14761286132591067
+    IsReversed = Yes
+    GRSpacing = 500
+    Title
+      {
+      Offset = 7.197
+      }
+    }
+$!LinePlotLayers 
+  ShowSymbols = Yes
+$!Linking 
+  BetweenFrames
+    {
+    LinkFrameSizeAndPosition = Yes
+    }
+$!FrameControl ActivateByNumber
+  Frame = 2
+$!SetStyleBase Config
