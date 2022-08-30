@@ -1312,9 +1312,9 @@ $!XYLineAxis
 $!XYLineAxis 
   YDetail 1
     {
-    RangeMin = -4300
-    RangeMax = 690.14761286132591067
-    IsReversed = Yes
+    RangeMin = -500
+    RangeMax = 3500
+    #IsReversed = Yes
     GRSpacing = 500
     Title
       {
