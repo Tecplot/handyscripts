@@ -142,34 +142,6 @@ def intForcesMoments(sliceZnes,method, direction):
     myNr=ds.variable('my').index
     mzNr=ds.variable('mz').index
 
-    #
-    # Integration of slices needs to be done in the XY line plot type
-    # to ensure the integration is done with respect to 'dx'.  In 2D & 3D
-    # the integration is done with respect to 'sqrt(dX^2 + dY^2 [+ dZ^2])' 
-    #
-    old_plot_type = fr.plot_type
-    fr.plot_type=PlotType.XYLine
-    plot = fr.plot()
-    plot.delete_linemaps()
-    plot.add_linemap()
-    plot.linemaps(0).name='Map 0'
-    #
-    # NOTE: We're making the assumption that the XYZ variables are
-    # always number 0,1,2 (the first three in the dataset)
-    #
-    if direction == "X":
-        plot.linemaps(0).x_variable_index=1 # Y variable
-        plot.linemaps(0).y_variable_index=2 # Z variable
-    elif direction == "Y":
-        plot.linemaps(0).x_variable_index=0 # X variable
-        plot.linemaps(0).y_variable_index=2 # Z variable
-    elif direction == "Z":
-        plot.linemaps(0).x_variable_index=0 # X variable
-        plot.linemaps(0).y_variable_index=1 # Y variable
-    plot.linemaps(0).zone=sliceZnes[0]
-    plot.linemaps(0).show=True
-    plot.view.fit()
-
     #Populates the returned array with the direction and integrated values
     for i,slice_zone in enumerate(sliceZnes):
         forcesMoments[(0,i)]= slice_zone.values(xAxisNr)[0]
@@ -189,11 +161,9 @@ def intForcesMoments(sliceZnes,method, direction):
             forcesMoments[(j+2,i)] = integrated_result
             slice_zone.aux_data[ds.variable(var_index).name] = integrated_result
 
-
     #Normalized direction:
     forcesMoments[1]=(forcesMoments[0]-forcesMoments[0].min())/(forcesMoments[0].max()-forcesMoments[0].min())
 
-    tp.active_frame().plot_type=old_plot_type
     return (forcesMoments)
 
 def forcesMomentsVsSpan(forcesMoments, direction, normalized, newPage):
