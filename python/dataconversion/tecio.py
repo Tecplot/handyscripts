@@ -446,6 +446,47 @@ def test_fe_triangle(file_name, use_double):
 
     close_file()
 
+def test_fe_lineseg(file_name, use_double):
+    open_file(file_name, "Title", ['x','y','nodal', 'cell centered'], use_double)
+
+    # Create linesegs
+    num_nodes = 3
+    num_elements = 2
+
+    # Cell centered variables with linesegments is weird, but possible.
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_NODECENTERED, # 'nodal'
+        VALUELOCATION_CELLCENTERED] # 'cell centered'
+
+    create_fe_zone(
+        "FE LineSeg",
+        ZONETYPE_FELINESEG,
+        num_nodes,
+        num_elements,
+        value_locations=value_locations)
+
+    zone_pts = [
+        0,0,
+        1,1,
+        2,0]
+
+    x_pts = zone_pts[0::2]
+    y_pts = zone_pts[1::2]
+    zone_write_values(x_pts)
+    zone_write_values(y_pts)
+    zone_write_values([1,2,3]) # 'nodal' has three values
+    zone_write_values([1,2]) # 'cell centered' has two values
+
+    nodes = [[1, 2], [2, 3]]
+    tecnode(nodes)
+    # Could optionally call tecnode() multiple times
+    #tecnode(nodes[0])
+    #tecnode(nodes[1])
+
+    close_file()
+
 
 def test_polygon(file_name, use_double):
     open_file(file_name, "Title", ['x','y','c'], use_double)
@@ -598,3 +639,7 @@ if "--testordered" in sys.argv:
 if "--testfetriangle" in sys.argv:
     test_fe_triangle("test_fe_triangle.plt", False)
     test_fe_triangle("test_fe_triangle.szplt", False)
+
+if "--testfelineseg" in sys.argv:
+    test_fe_lineseg("test_fe_lineseg.plt", False)
+    test_fe_lineseg("test_fe_lineseg.szplt", False)
