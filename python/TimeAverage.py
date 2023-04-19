@@ -17,17 +17,27 @@ tputils
 
 Description
 -----------
-To run this script we must first enable PyTecplot Connections via the Scripting menu.
-The tpmath and tputils modules are also required.
+1. To run this script we must first enable PyTecplot Connections via the
+   Scripting menu in the Tecplot 360 GUI.
+   The tpmath and tputils modules are also required. The script will import them
+   if these modules are placed in the cwd or the same location as this .py script.
+   Errors will occur if these modules aren't accessible.
 
-Execute the script from a command prompt or terminal.
-This will prompt for which Strand to average.
-The strand number can be found in the Dataset Information dialog.
-A strand is simply an integer which identifies a collection of zones through time.
-Once we enter the strand number the script will handle the zone duplication
-and execution of the formulas to average the results.
-When the script is finished, activate the Time Average zone to view results.
+2. Execute the script from a command prompt or terminal.
+   This will prompt for which Strand to average. The strand number can be found
+   in the Dataset Information dialog.
+   A strand is simply an integer which identifies a collection of zones through time.
+   Once we enter the strand number, the script will handle the zone duplication
+   and execution of the formulas to average the results.
 
+3. When the script is finished, activate the Time Average zone in 360's Zone
+   Style menu to view results.
+
+WARNING: For this script to work, all zones to be averaged MUST have the same
+         number of points. For example, CONVERGE data has an adaptive mesh so each
+         timestep will likely have a different number of zones. This script cannot
+         handle this type of data. To compute an average, a grid with a constant
+         number of points through time will be required.
 """
 import tecplot as tp
 import tpmath
