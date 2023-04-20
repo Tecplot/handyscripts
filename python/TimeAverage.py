@@ -34,10 +34,10 @@ Description
    Style menu to view results.
 
 WARNING: For this script to work, all zones to be averaged MUST have the same
-         number of points. For example, CONVERGE data has an adaptive mesh so each
-         timestep will likely have a different number of zones. This script cannot
-         handle this type of data. To compute an average, a grid with a constant
-         number of points through time will be required.
+         number of points. For example, data with an adaptive mesh will have
+         a different number of point per time step. This script cannot handle
+         this type of data as is. Some sort of grid with a constant number
+         of points through time will be required to calculate an average.
 """
 import tecplot as tp
 import tpmath
