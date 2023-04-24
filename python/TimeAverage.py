@@ -52,7 +52,10 @@ with tp.session.suspend():
     # Example:
     # variables_to_average = [dataset.variable("salinity"), dataset.variable("temp")]
     # constant_variables = [dataset.variable("x"), dataset.variable("y")]
-    variables_to_average = dataset.variables()
+
+    # dataset.variables() returns a generator, which can only be iterated over once, so make sure
+    # to convert it to a list, which can be iterated over multiple times
+    variables_to_average = list(dataset.variables())
     constant_variables = None
 
     zones_by_strand = tputils.get_zones_by_strand(dataset)
