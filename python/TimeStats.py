@@ -15,7 +15,7 @@ Description
 -----------
 This script assumes that a transient dataset is loaded into 360 with PyTecplot
 Connections enabled via the Scripting menu. The result of the script will be two
-new zones where one is the minimum value for each node though time and the other zone 
+new zones where one is the minimum value for each node through time and the other zone 
 will have the maximum value for each node through time. 
 
 
