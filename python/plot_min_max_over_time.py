@@ -26,8 +26,8 @@ with tp.session.suspend():
     max_values = []
     var = dataset.variable(var_name)
     zones_to_check = list(dataset.zones(zone_name))
-    print(zones_to_check)
     for z in dataset.zones(zone_name):
+        print("Getting min/max for zone:",z.name)
         min_values.append((z.solution_time, z.values(var).min()))
         max_values.append((z.solution_time, z.values(var).max()))
 
@@ -48,4 +48,9 @@ with tp.session.suspend():
     zone.aux_data['Source_Zone'] = zone_name
     zone.aux_data['Source_Var'] = var_name
 
-    new_frame.plot(PlotType.XYLine).activate()
+    line_plot = new_frame.plot(PlotType.XYLine)
+    line_plot.activate()
+    line_plot.linemaps().show = True
+    line_plot.view.fit()
+    
+    
