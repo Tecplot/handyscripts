@@ -394,10 +394,10 @@ def add_image_data(vtk_dataset, tecplot_dataset):
 
     # Write XYZ values
     spacing = vtk_dataset.GetSpacing()
-    origin = vtk_dataset.GetOrigin()
-    xvals = np.linspace(origin[0] - spacing[0]*dims[0]/2, origin[0] + spacing[0]*dims[0]/2, dims[0])
-    yvals = np.linspace(origin[1] - spacing[1]*dims[1]/2, origin[1] + spacing[1]*dims[1]/2, dims[1])
-    zvals = np.linspace(origin[2] - spacing[2]*dims[2]/2, origin[2] + spacing[2]*dims[2]/2, dims[2])
+    bounds = vtk_dataset.GetBounds()
+    xvals = np.linspace(bounds[0], bounds[1], dims[0])
+    yvals = np.linspace(bounds[2], bounds[3], dims[1])
+    zvals = np.linspace(bounds[4], bounds[5], dims[2])
     xx,yy,zz = np.meshgrid(xvals,yvals,zvals,indexing='ij')
     zone.values(0)[:] = xx.ravel()
     zone.values(1)[:] = yy.ravel()
