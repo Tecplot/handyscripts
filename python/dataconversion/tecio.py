@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import platform
 if platform.system() == "Windows":
-    tecio = ctypes.cdll.LoadLibrary(r"C:\Program Files\Tecplot\Tecplot 360 EX Beta\bin\tecio.dll")
+    tecio = ctypes.cdll.LoadLibrary(r"C:\Program Files\Tecplot\Tecplot 360 EX 2023 R1\bin\tecio.dll")
 elif platform.system() == "Darwin":
     tecio = ctypes.cdll.LoadLibrary("/Applications/Tecplot 360 EX 2021 R2/Tecplot 360 EX 2021 R2.app/Contents/Frameworks/libtecio.dylib")
 elif platform.system() == "Linux":
@@ -27,6 +27,15 @@ ZONETYPE_FETETRAHEDRON = 4
 ZONETYPE_FEBRICK = 5
 ZONETYPE_FEPOLYGON = 6
 ZONETYPE_FEPOLYHEDRON = 7
+
+# To be used with FEMixed
+FECELLSHAPE_BAR = 0
+FECELLSHAPE_TRIANGLE = 1
+FECELLSHAPE_QUADRILATERAL = 2
+FECELLSHAPE_TETRAHEDRON = 3
+FECELLSHAPE_HEXAHEDRON = 4
+FECELLSHAPE_PYRAMID = 5
+FECELLSHAPE_PRISM = 6
 
 FILETYPE_GRIDANDSOLUTION = 0
 FILETYPE_GRID = 1
@@ -228,7 +237,91 @@ def create_fe_zone(
             passive_vars = passive_vars,
             value_locations = value_locations)
     if ret != 0:
-        raise Exception("create_ordered_zone Error")
+        raise Exception("create_fe_zone Error")
+    return ret
+
+def create_fe_mixed_zone(
+    zone_name,
+    num_nodes,
+    num_sections,
+    num_elements_per_section,
+    cell_shape_per_section,
+    grid_order_per_section = None,
+    basis_function_per_section = None,
+    solution_time=0,
+    strand=0,
+    num_face_connections = 0,
+    face_neighbor_mode = 0,
+    var_sharing=None,
+    passive_vars=None,
+    value_locations=None):
+
+    tecio.TECZNEFEMIXED142.restype=ctypes.c_int32
+    tecio.TECZNEFEMIXED142.argtypes=(
+            ctypes.c_char_p, # ZoneTitle
+            ctypes.POINTER(ctypes.c_int64), # NumNodes
+            ctypes.POINTER(ctypes.c_int32), # NumSections
+            ctypes.POINTER(ctypes.c_int32), # CellShapePerSection
+            ctypes.POINTER(ctypes.c_int32), # GridOrderPerSection
+            ctypes.POINTER(ctypes.c_int32), # BasisFnPerSection
+            ctypes.POINTER(ctypes.c_int64), # NumElementsPerSection
+            ctypes.POINTER(ctypes.c_double), # SolutionTime
+            ctypes.POINTER(ctypes.c_int32), # StrandID
+            ctypes.POINTER(ctypes.c_int32), # NumFaceConnections
+            ctypes.POINTER(ctypes.c_int32), # FaceNeighborMode
+            ctypes.POINTER(ctypes.c_int32), # PassiveVarList
+            ctypes.POINTER(ctypes.c_int32), # ValueLocation
+            ctypes.POINTER(ctypes.c_int32), # ShareVarFromZone
+            ctypes.POINTER(ctypes.c_int32)) # ShareConnectivityFromZone
+
+    num_nodes = ctypes.c_int64(num_nodes)
+    assert(num_sections <= 16)
+    if grid_order_per_section == None:
+        grid_order_per_section = [1]*num_sections
+    if basis_function_per_section == None:
+        basis_function_per_section = [0]*num_sections
+    num_sections = ctypes.c_int32(num_sections)
+
+    cell_shape_per_section = (ctypes.c_int32*len(cell_shape_per_section))(*cell_shape_per_section)
+    num_elements_per_section = (ctypes.c_int64*len(num_elements_per_section))(*num_elements_per_section)
+
+    grid_order_per_section = (ctypes.c_int32*len(grid_order_per_section))(*grid_order_per_section)
+
+    basis_function_per_section = (ctypes.c_int32*len(basis_function_per_section))(*basis_function_per_section)
+
+    ignored = ctypes.c_int32(0)
+    num_face_connections = ctypes.c_int32(num_face_connections)
+    face_neighbor_mode = ctypes.c_int32(face_neighbor_mode)
+
+    passive_var_list = None
+    if passive_vars:
+        passive_var_list = (ctypes.c_int32*len(passive_vars))(*passive_vars)
+    var_share_list = None
+    if var_sharing:
+        var_share_list = (ctypes.c_int32*len(var_sharing))(*var_sharing)
+    value_location_list = None
+    if value_locations:
+        value_location_list = (ctypes.c_int32*len(value_locations))(*value_locations)
+
+    ret = tecio.TECZNEFEMIXED142(
+            ctypes.c_char_p(bytes(zone_name, encoding="UTF-8")),
+            ctypes.byref(num_nodes),
+            ctypes.byref(num_sections),
+            cell_shape_per_section,
+            grid_order_per_section,
+            basis_function_per_section,
+            num_elements_per_section,
+            ctypes.byref(ctypes.c_double(solution_time)),
+            ctypes.byref(ctypes.c_int32(strand)),
+            ctypes.byref(num_face_connections),
+            ctypes.byref(face_neighbor_mode),
+            passive_var_list,
+            value_location_list,
+            var_share_list,
+            ctypes.byref(ctypes.c_int32(0))) #ShareConnectivityFromZone
+
+    if ret != 0:
+        raise Exception("create_fe_mixed_zone Error")
     return ret
 
 def create_poly_zone(
@@ -488,6 +581,56 @@ def test_fe_lineseg(file_name, use_double):
     close_file()
 
 
+def test_fe_mixed(file_name, use_double=True):
+    open_file(file_name, "Title", ['x','y','nodal', 'cell centered'], use_double)
+
+    # Create linesegs
+    num_nodes = 3
+    num_elements = 2
+
+    # Cell centered variables with linesegments is weird, but possible.
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_NODECENTERED, # 'nodal'
+        VALUELOCATION_CELLCENTERED] # 'cell centered'
+
+    create_fe_mixed_zone(
+        "FE Mixed Bar",
+        num_nodes,
+        1,                 #num_sections,
+        [num_elements],    #num_elements_per_section,
+        [FECELLSHAPE_BAR], #cell_shape_per_section,
+        value_locations = value_locations)
+##    grid_order_per_section = None,
+##    basis_function_per_section = None,
+##    solution_time=0,
+##    strand=0,
+##    num_face_connections = 0,
+##    face_neighbor_mode = 0,
+##    var_sharing=None,
+##    passive_vars=None,
+
+    zone_pts = [
+        0,0,
+        1,1,
+        2,0]
+
+    x_pts = zone_pts[0::2]
+    y_pts = zone_pts[1::2]
+    zone_write_values(x_pts)
+    zone_write_values(y_pts)
+    zone_write_values([1,2,3]) # 'nodal' has three values
+    zone_write_values([1,2]) # 'cell centered' has two values
+
+    nodes = [[1, 2], [2, 3]]
+    tecnode(nodes)
+    # Could optionally call tecnode() multiple times
+    #tecnode(nodes[0])
+    #tecnode(nodes[1])
+
+    close_file()
+
 def test_polygon(file_name, use_double):
     open_file(file_name, "Title", ['x','y','c'], use_double)
 
@@ -643,3 +786,6 @@ if "--testfetriangle" in sys.argv:
 if "--testfelineseg" in sys.argv:
     test_fe_lineseg("test_fe_lineseg.plt", False)
     test_fe_lineseg("test_fe_lineseg.szplt", False)
+
+if "--testfemixed" in sys.argv:
+    test_fe_mixed("test_fe_mixed.szplt")
