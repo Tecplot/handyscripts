@@ -34,8 +34,8 @@ def feLineSeg_to_ordered(fezone):
     print(fezone.zone_type)
     if fezone.zone_type == tp.constant.ZoneType.FELineSeg:
         print("Num Elements: ", fezone.num_elements)
-        nodes = fezone.nodemap
-        print("Nodemap: ", [n for n in nodes])
+        nodes = fezone.nodemap[:]
+        print("Nodemap: ", nodes)
 
         # Convert to I ordered zone
         continue_line = True
@@ -76,28 +76,31 @@ def feLineSeg_to_ordered(fezone):
         
         for var in range(fezone.num_variables):  # For all variables
             # Get read/writeable access for specific Zone-Variable
-            FE_vals = fezone.values(var)
-            ordered_vals = ordered_out.values(var)
+            FE_vals = fezone.values(var)[:]
+            ordered_vals = []
 
-            ordered_idx = 0
             for FE_idx in index_list:
                 # Overwrite the values of the ordered zone
-                ordered_vals[ordered_idx] = FE_vals[FE_idx]
-                ordered_idx += 1
+                ordered_vals.append(FE_vals[FE_idx])
+            ordered_out.values(var)[:] = ordered_vals
 
     else:
         return False
 
 
-# Use generated sample FEZone
-ds = setup_base_FEZone()
+if __name__ == '__main__':
+    import time
+    # Use generated sample FEZone
+    tp.new_layout()
+    ds = setup_base_FEZone()
+    
+    # Extracted from slice of onera see "Extracting Slice" Pytecplot Example
+    init_zones = list(ds.zones())
+    start = time.time()
+    for z in init_zones:
+        # Convert
+        feLineSeg_to_ordered(z)
+    print("Conversion time:", time.time()-start)
+    ds.delete_zones(init_zones)
+    tp.data.save_tecplot_ascii('extract_ordered.dat', use_point_format=True)
 
-# Extracted from slice of onera see "Extracting Slice" Pytecplot Example
-
-init_zones = list(ds.zones())
-for z in init_zones:
-    # Convert
-    feLineSeg_to_ordered(z)
-
-ds.delete_zones(init_zones)
-tp.data.save_tecplot_ascii('extract_ordered.dat', use_point_format=True)
