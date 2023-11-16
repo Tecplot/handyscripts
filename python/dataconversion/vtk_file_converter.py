@@ -451,7 +451,7 @@ def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
         reader = vtk.vtkXMLImageDataReader()
     elif vtk_file.endswith(".pdb"):
         reader = vtk.vtkPDBReader()
-    elif vtk_file.endswith(".vtkhdf"):
+    elif vtk_file.endswith(".vtkhdf") or vtk_file.endswith(".hdf"):
         reader = vtk.vtkHDFReader()
 
     reader.SetFileName(vtk_file)
