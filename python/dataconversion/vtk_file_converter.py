@@ -21,6 +21,7 @@ vtk
     A package that supports reading of vtk data. VTK is an open-source toolkit
     for 3D computer graphics, image processing, and visualization.
     https://pypi.org/project/vtk/
+    NOTE: vtk 9.3.0 or newer is required for VTKHDF support
 
 
 Example usage:
