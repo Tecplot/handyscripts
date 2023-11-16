@@ -58,6 +58,7 @@ def field_data_type(vtk_data_type):
     type_dict[vtk.VTK_BIT]           = FieldDataType.Bit
     type_dict[vtk.VTK_CHAR]          = FieldDataType.Byte
     type_dict[vtk.VTK_UNSIGNED_CHAR] = FieldDataType.Byte
+    type_dict[vtk.VTK_SIGNED_CHAR]   = FieldDataType.Int16
     type_dict[vtk.VTK_INT]           = FieldDataType.Int16
     type_dict[vtk.VTK_UNSIGNED_INT]  = FieldDataType.Int16
     type_dict[vtk.VTK_LONG]          = FieldDataType.Int32
@@ -69,6 +70,7 @@ def field_data_type(vtk_data_type):
     return type_dict[vtk_data_type]
 
 def zone_type(vtk_cell_type):
+    print("Cell Type:", vtk_cell_type)
     type_dict = dict()
     type_dict[vtk.VTK_LINE] = ZoneType.FELineSeg
     type_dict[vtk.VTK_TRIANGLE] = ZoneType.FETriangle
@@ -448,6 +450,8 @@ def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
         reader = vtk.vtkXMLImageDataReader()
     elif vtk_file.endswith(".pdb"):
         reader = vtk.vtkPDBReader()
+    elif vtk_file.endswith(".vtkhdf"):
+        reader = vtk.vtkHDFReader()
 
     reader.SetFileName(vtk_file)
     reader.Update()
@@ -467,7 +471,7 @@ def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description="Convert VTK (.vtu, .vtp, .vts, .vti, .pdb) files to Tecplot PLT format")
+    parser = argparse.ArgumentParser(description="Convert VTK (.vtu, .vtp, .vts, .vti, , .vtkhdf, .pdb) files to Tecplot PLT format")
     parser.add_argument("infile", help="VTK file to convert")
     parser.add_argument("outfile", help="Name of Tecplot PLT (must end in .plt)")
     args = parser.parse_args()
