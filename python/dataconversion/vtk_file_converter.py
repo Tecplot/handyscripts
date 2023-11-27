@@ -80,6 +80,7 @@ def zone_type(vtk_cell_type):
     type_dict[vtk.VTK_QUADRATIC_TETRA]    = ZoneType.FETetra
     type_dict[vtk.VTK_VOXEL] = ZoneType.FEBrick
     type_dict[vtk.VTK_HEXAHEDRON] = ZoneType.FEBrick
+    type_dict[vtk.VTK_LAGRANGE_HEXAHEDRON] = ZoneType.FEBrick
     # Special code to create collapsed bricks
     type_dict[vtk.VTK_WEDGE] = ZoneType.FEBrick
     type_dict[vtk.VTK_PYRAMID] = ZoneType.FEBrick
