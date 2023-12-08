@@ -152,10 +152,14 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
             if num_components == 1:
                 full_name = name
             else:
+                # Special case for 3 & 6 components to match ParaView's behavior
                 if num_components == 3:
                     suffix = ['_X', '_Y', '_Z']
                 elif num_components == 6:
                     suffix = ['_XX', '_YY', '_ZZ', '_XY', '_YZ', '_XZ']
+                else:
+                    # Otherise use '0', '1', '2', etc. for the suffix
+                    suffix = [str(i) for i in range(num_components)]
                 full_name = name+suffix[component]
 
             variable = zone.dataset.add_variable(full_name, dtypes = [fd_type], locations=location)
