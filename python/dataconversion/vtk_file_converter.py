@@ -158,8 +158,8 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
                 elif num_components == 6:
                     suffix = ['_XX', '_YY', '_ZZ', '_XY', '_YZ', '_XZ']
                 else:
-                    # Otherise use '0', '1', '2', etc. for the suffix
-                    suffix = [str(i) for i in range(num_components)]
+                    # Otherise use '_1', '_2', '_3', etc. for the suffix
+                    suffix = ["_"+str(i+1) for i in range(num_components)]
                 full_name = name+suffix[component]
 
             variable = zone.dataset.add_variable(full_name, dtypes = [fd_type], locations=location)
