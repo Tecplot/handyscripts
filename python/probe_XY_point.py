@@ -11,7 +11,7 @@ from tecplot.constant import *
 from scipy.interpolate import interp1d
 
 if '-c' in sys.argv:
-	tp.session.connect()
+    tp.session.connect()
 
 #load data
 examples_dir = tp.session.tecplot_examples_directory()
@@ -24,20 +24,19 @@ zname = "Concentration"
 ds = tp.active_frame().dataset
 zn = ds.zone(zname)
 
+x_array = zn.values('Month')[:]
+y_array = zn.values('Y')[:]
+
 
 # use interpolation of X and Y axes to get value.
 def probe_func_at(value):
     
-    # Uses default X and Y axes
-    x_array = zn.values(0)[:]
-    y_array = zn.values(1)[:]
-
     if value > max(x_array) or value < min(x_array):
         print("value not in domain of given x_array")
         return
         
     out = interp1d(x_array, y_array, kind='linear')
-    print(f"At X = {value}, ", f"{variable} =", out(value))
+    print(f"At X = {value}, ", f"{zname} =", out(value))
     return
 
-probe_func_at(11.33)
+probe_func_at(6)
