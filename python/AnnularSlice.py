@@ -1,3 +1,33 @@
+""" This script runs in connected mode and plots an extracted cylindrical slice.
+See the blog article at tecplot.com that discusses this further.
+
+Example Usage:
+--------------
+For an example of using this script, follow the instructions here:
+
+  1. Go to File > Load Data and select “ICE\ICE000045_-1.60894e+02.plt" from the
+  Getting Started Bundle:
+  https://tecplot.azureedge.net/data/360GettingStarted.zip
+
+  2. Enable PyTecplot connections via Scripting > PyTecplot Connections…”
+
+  3. In a command prompt, run the AnnularSlice.py script:
+     Windows: > python -O AnnularSlice.py
+     Linux/macOS: > /path/to/360/bin/tec360-env -- python -O AnnularSlice.py
+
+  4. Follow the script prompts. For example:
+     Enter the axial direction: [X, Y, or Z]: Z
+     Enter the radius value: 0.0278
+     Enter the reference zone name, to use to compute the center point (accepts
+       wildcards *): *bound=2
+
+Note that the result sets up Value Blanking to use the minimum Y-value, which is
+not sufficient for this data, so you’ll have to add a small epsilon to the value
+blanking constraint yourself (i.e. Y <= -0.02779). If you prefer not to Value
+Blank, try visualizing the plot in 3D (see blog article for details).
+
+"""
+
 import time
 import tecplot as tp
 from tecplot.constant import *
@@ -25,7 +55,7 @@ def compute_radius_and_theta(axial_direction="X", center_point=(0,0,0)):
 
 def create_annular_slice(axial_direction="X", radius=0.0, center_point=(0,0,0)):
     ds = tp.active_frame().dataset
-    
+
     compute_radius_and_theta(axial_direction, center_point)
 
     """
@@ -36,10 +66,10 @@ def create_annular_slice(axial_direction="X", radius=0.0, center_point=(0,0,0)):
     this method is that the resulting iso-surface will have a strip of cells that span the
     360-0 degree boundary. In 2D plots, these cells will be stretched across the entire plot. To
     combat this we use value blanking at the minimum of one of the axis variables (which corresponds
-    with the periodic Theta boundary).  You do lose a small amount of information at the edges of the 
+    with the periodic Theta boundary).  You do lose a small amount of information at the edges of the
     plot, and may need to hand adjust this value a little.
     """
-    
+
     # Extract and Iso-Surface at the specified Radius
     print(f"Extracting iso-surface at radius={radius}")
     threed_plot = tp.active_frame().plot(PlotType.Cartesian3D)
@@ -53,7 +83,7 @@ def create_annular_slice(axial_direction="X", radius=0.0, center_point=(0,0,0)):
 
     # Grab the first extracted iso-surface
     iso_zone = ds.zone(num_zones)
-    
+
     print("Creating 2D Plot")
     #
     # Create the 2D plot of the unwrapped annular slice, by plotting just the "left" and "right"
@@ -66,7 +96,7 @@ def create_annular_slice(axial_direction="X", radius=0.0, center_point=(0,0,0)):
     plot.solution_time = iso_zone.solution_time
     axes = plot.axes
     axes.x_axis.variable = ds.variable("Theta")
-    
+
     # Assuming that X,Y,Z are the first three variables
     axis_num_map = {"X":0, "Y":1, "Z":2}
     axes.y_axis.variable = ds.variable(axis_num_map[axial_direction])
