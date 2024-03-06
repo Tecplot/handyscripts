@@ -30,7 +30,26 @@ def compute_sum(variable, source_zones, dest_zone, chunk_size=50):
                 equation += " + {%s}[%d]" % (variable.name, zone_num)
             tp.data.operate.execute_equation(equation, zones=[dest_zone])
 
-#
+
+def compute_squared_sum(variable, source_zones, dest_zone, chunk_size=50):
+    # Tecplot equation syntax has a length limit, so we chunk the summation to ensure
+    # that we don't overflow that length limit.  In testing the limit is ~300 zones, but
+    # it depends on the length of the variable name as well.
+    #
+    # Larger chunk_size will typically result in faster run times, but will consume
+    # more RAM since more zones need to be loaded simultaneously.
+
+    with tputils.ForceEditableVariable(variable):
+        tp.data.operate.execute_equation("{%s} = 0" % (variable.name), zones=[dest_zone])
+        for zones in tputils.chunks(source_zones, chunk_size):
+            equation = "{%s} = {%s}" % (variable.name, variable.name)
+            for z in zones:
+                zone_num = z.index + 1  # Adding 1 because execute equation uses 1-based zone indices
+                equation += " + {%s}[%d]**2" % (variable.name, zone_num)
+            tp.data.operate.execute_equation(equation, zones=[dest_zone])
+
+
+
 # Computes the min or max of the specified variable for the source_zones and
 # applies the result to the destination zone. Typical usage would be
 # to find the minimum value over all the values in a specific strand over time.
@@ -94,6 +113,62 @@ def compute_average(source_zones, variables_to_average, constant_variables=None,
                 # no way to convert a variable to passive.
                 tp.data.operate.execute_equation("{%s} = 0"%(v.name), zones=[avg_zone])
     return avg_zone
+
+
+#
+# Computes the RMS (Root Mean Square) average of the supplied zones for each
+# variable supplied. Each zone must have the same number of points.
+#
+# Creates a new zone called "Time RMS - nnn" where nnn is the strand number
+# of the first source_zones element.  The resulting zone will have variable values of
+# zero for any variable not supplied to this function
+#
+# source_zones - the set of zones to use for computing the rms average
+# variables_to_average - the variables for which to average
+# constant_variables - any variables that are constant across the set
+#   of source_zones. Often these are X,Y,Z variables.
+# chunk_size - The number of zones to simultaneously load in order to compute the
+#   sum. Larger numbers will typically result in faster run times, but will consume
+#   more RAM.
+#
+def compute_rms(source_zones, variables_to_rms, constant_variables=None, chunk_size=50):
+    dataset = source_zones[0].dataset
+    rms_zone = dataset.copy_zones(source_zones[0])[0]
+    strand = rms_zone.strand
+    rms_zone.name = "RMS Zone - " + str(strand)
+    rms_zone.strand = 0
+    rms_zone.solution_time = 0
+    rms_zone.aux_data['source_strand'] = str(strand)
+    rms_zone.aux_data['zone_type'] = "RMS"
+
+    for v in dataset.variables():
+        # Skip over the constants
+        if constant_variables and v in constant_variables:
+            continue
+
+        with tputils.ForceEditableVariable(v):
+            if v in variables_to_rms:
+                print("Computing root mean square (RMS) for strand: {}, var: {}".format(strand, v.name))
+                compute_squared_sum(v, source_zones, dest_zone=rms_zone, chunk_size=chunk_size)
+                new_var_name = f"{v.name}".split('_Delta_from_Avg')[0]
+                # To create a newly named RMS variables, uncomment this line:
+                #new_var_name = f"{v.name}".split('_Delta_from_Avg')[0]+"_rms"
+                # Otherwise, RMS values will be stored in original variable names
+                # but only in the RMS zone.
+                equation = "{%s} = sqrt({%s}/%d)"%(new_var_name, v.name, len(source_zones))
+                tp.data.operate.execute_equation(equation, zones=[rms_zone])
+
+            else:
+                # If the variable is not to be RMSed, set it to zero so we don't
+                # mislead the user with results that were copied from a source zone.
+                # Making the variable passive would be better, but there's currently
+                # no way to convert a variable to passive.
+                tp.data.operate.execute_equation("{%s} = 0"%(v.name), zones=[rms_zone])
+    print(f"Adding {rms_zone.name} to data set. Activate it in the Zone Style dialog to see RMS averaged variable values.")
+
+    return rms_zone
+
+
 
 #
 # Computes the phase average of the supplied zones for each variable supplied. 
