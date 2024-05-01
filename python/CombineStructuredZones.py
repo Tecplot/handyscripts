@@ -1,3 +1,14 @@
+"""This script will combine Ordered Zones. 
+By default the zones must have the same I,J,K dimensions. 
+By default will combine all zones. This can be easily changed.
+
+usage:
+
+    > python CombineStructuredZones.py
+
+"""
+
+
 import time
 import numpy as np
 import tecplot as tp

@@ -16,7 +16,7 @@ def convert_to_json(input_file, output_file):
     var_startline = lines.index([str(line) for line in lines if str(line).startswith("VARIABLES")][0])
     var_endline = lines.index([str(line) for line in lines[var_startline+1:] if not str(line).startswith('"')][0])
     vars = [str(line).split('"')[1] for line in lines[var_startline:var_endline]]
-    # print("vars = ", vars)    
+    # print("vars = ", vars)
 
     # specify structure
     structure_line = [str(line).split('=') for line in lines if line.startswith(r'I=')][0]

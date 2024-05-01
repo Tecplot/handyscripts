@@ -22,10 +22,11 @@ tp.session.connect()
 
 
 # Remove the following lines if you already have a dataset
-tp.new_layout()
-examples_directory = tp.session.tecplot_examples_directory()
-tp.data.load_tecplot(os.path.join(examples_directory, "SimpleData", "F18.plt"))
+#tp.new_layout()
+#examples_directory = tp.session.tecplot_examples_directory()
+# tp.data.load_tecplot(os.path.join(examples_directory, "SimpleData", "F18.plt"))
 # Add CellCentered variable
+
 tp.data.operate.execute_equation(equation='{S_CC} = {S}',
     value_location=ValueLocation.CellCentered)
 
