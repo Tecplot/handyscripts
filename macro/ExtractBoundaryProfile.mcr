@@ -100,7 +100,7 @@ $!PICK CLEAR
 
 #Computes the distance along the line
 $!ALTERDATA  [|NUMZONES|]
-    EQUATION = '{dist}=(I-1)*(|height|/98)'
+    EQUATION = '{dist}=(I-1)*(|height|/99)'
   
 # Plot the profile in a new frame
 $!CREATENEWFRAME 
