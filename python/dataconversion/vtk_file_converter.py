@@ -446,6 +446,8 @@ def add_vtk_dataset(vtk_dataset, tecplot_dataset):
 
 def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
     reader = None
+    if vtk_file.endswith(".vtk"):
+        reader = vtk.vtkDataSetReader()
     if vtk_file.endswith(".vtu"):
         reader = vtk.vtkXMLUnstructuredGridReader()
     elif vtk_file.endswith(".vtp"):
