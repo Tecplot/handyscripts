@@ -58,7 +58,7 @@ def fieldmap_minmax(fieldmap, variable):
             limits = (min(limits[0], low), max(limits[1], high))
     return limits
 
-
+@tp.tecutil.lock()
 def attach_dataset(frame, dataset):
     """Attach a dataset to a specific frame
 
