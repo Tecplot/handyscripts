@@ -2,7 +2,11 @@ import tecplot as tp
 import glob
 import sys
 #
-# Usage: mprof_to_plt.py mprofile*.dat outfile.plt
+# Usage: 
+#   mprof_to_plt.py mprofile.dat outfile.plt
+#
+#   On Linux, you may need to enclose wildcards in quotes:
+#      mprof_to_plt.py 'mprofile*.dat' outfile.plt
 #
 
 
@@ -27,14 +31,17 @@ ds.add_variable("RAM")
 infiles = sys.argv[1]
 outfile = sys.argv[2]
 
-#files = glob.glob("360*batch*core*tpw101*.dat")
 files = glob.glob(infiles)
 for infile in files:
     print(infile)
-    values = read_mprof_results(infile)
-    zone = ds.add_ordered_zone(infile, shape=(len(values)))
-    zone.values("RAM")[:] = [v[0] for v in values]
-    zone.values("Time")[:] = [v[1] for v in values]
+    try:
+        values = read_mprof_results(infile)
+        zone = ds.add_ordered_zone(infile, shape=(len(values)))
+        zone.values("RAM")[:] = [v[0] for v in values]
+        zone.values("Time")[:] = [v[1] for v in values]
+    except Exception as e:
+        print("    Failure parsing file", e)
 tp.data.save_tecplot_plt(outfile)
+print("Saved to:", outfile)
 
 
