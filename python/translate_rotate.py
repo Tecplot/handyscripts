@@ -76,23 +76,23 @@ def arbitrary_xyz_rotation(alpha, beta, gamma, x=0, y=0, z=0):
             X        
     """
 
-    # Convert angles from degrees to radians
     alpha_rad = np.radians(alpha)
     beta_rad = np.radians(beta)
     gamma_rad = np.radians(gamma)
 
+    # Order matters! Matrix multiplication not commutative!
 
-    # ALPHA rotation 
-    tp.data.operate.execute_equation(f"{{y}} = {{y}} * cos({alpha_rad}) - {{z}} * sin({alpha_rad})")
-    tp.data.operate.execute_equation(f"{{z}} = {{y}} * sin({alpha_rad}) + {{z}} * cos({alpha_rad})")
+    # GAMMA/ROLL rotation
+    tp.data.operate.execute_equation(f"{{y}} = {{y}} * cos({gamma_rad}) - {{z}} * sin({gamma_rad})")
+    tp.data.operate.execute_equation(f"{{z}} = {{y}} * sin({gamma_rad}) + {{z}} * cos({gamma_rad})")
 
-    # BETA rotation
-    tp.data.operate.execute_equation(f"{{x}}x_new = {{x}} * cos({beta_rad}) + {{z}} * sin({beta_rad})")
-    tp.data.operate.execute_equation(f"{{z}}z_new = -{{x}} * sin({beta_rad}) + {{z}} * cos({beta_rad})")
+    # BETA/PITCH rotation
+    tp.data.operate.execute_equation(f"{{x}} = {{x}} * cos({beta_rad}) + {{z}} * sin({beta_rad})")
+    tp.data.operate.execute_equation(f"{{z}} = -{{x}} * sin({beta_rad}) + {{z}} * cos({beta_rad})")
 
-    # GAMMA rotation
-    tp.data.operate.execute_equation(f"{{x}}x_new = {{x}} * cos({gamma_rad}) - {{y}} * sin({gamma_rad})")
-    tp.data.operate.execute_equation(f"{{y}}y_new = {{x}} * sin({gamma_rad}) + {{y}} * cos({gamma_rad})")
+    # ALPHA/YAW rotation 
+    tp.data.operate.execute_equation(f"{{x}} = {{x}} * cos({alpha_rad}) - {{y}} * sin({alpha_rad})")
+    tp.data.operate.execute_equation(f"{{y}} = {{x}} * sin({alpha_rad}) + {{y}} * cos({alpha_rad})")
 
     # Get Rotated
     return
