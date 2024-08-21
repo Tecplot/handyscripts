@@ -1,14 +1,7 @@
 """
-Script has two parts, first to translate to XYZ location. This point will be the new origin. All rotations or transformations will be about that new origin.
-params:
--zone_num where data is located.
--index I of the XYZ location of interest.
+Given functions for translation and rotation in 2D and 3D.
 
-Second part rotates about the new origin. In this case the rotation is about a 2D plane, which only requires one angle, theta. 
-
-A general 3D rotation formulation is given beneath. This should be able to rotate (and translate) any point in cartesian grid.
 """
-
 
 import tecplot as tp
 from tecplot.exception import *
@@ -16,49 +9,78 @@ from tecplot.constant import *
 import math
 import numpy as np
 
-# doesn't need to be in connected mode, but it's easier to see what's happening.
-tp.session.connect()
+def translate_to_XYZ(zone_num, new_x=0 , new_y=0, new_z=0, by_index_num = False, index_num = -1):
+  """
+  Params:
+  zone - must supply the zone number
+  new_x, new_y, new_z - should be set if setting new x,y,z coordinates.
+  by_index_num - disregards new_x, new_y, new_z to set xyz by index instead.
+  index_num - must be set if by_index_num = True
+  """
 
-# this creates a variable corresponding to the index value of every cell/node.
-tp.data.operate.execute_equation(equation="{I} = I")
+  ds = tp.active_frame().dataset
+  zone = ds.zone(zone_num)
+  
+  if by_index_num:
+    # supply the zone and index you want to move to. 
+    # Note that you can pick nearest node and therefore exact I, by using ctrl + click with the probe tool in Tecplot
+    if index_num < 0:
+       return print("\n", "Must supply valid node/cell index number to translate to...", "\n")
 
-# supply the zone and index you want to move to. 
-# Note: You can pick nearest node and therefore exact I, by using ctrl + click with the probe tool in Tecplot
-zone_num = 0
-I = 778
+    
+    new_x = ds.variable("x").values(zone)[index_num-1] # subtract 1 because Tecplot is 1-indexed, python is 0-indexed. 
+    new_y = ds.variable("y").values(zone)[index_num-1]
+    new_z = ds.variable("z").values(zone)[index_num-1]
+     
 
-ds = tp.active_frame().dataset
-zone = ds.zone(zone_num)
-new_x = ds.variable("x").values(zone)[I-1] # subtract 1 because Tecplot is 1-indexed, python is 0-indexed. 
-new_y = ds.variable("y").values(zone)[I-1]
-new_z = ds.variable("z").values(zone)[I-1]
-
-# translate to new XYZ
-tp.data.operate.execute_equation(equation=f"{{x}} = {{x}} - {new_x}")
-tp.data.operate.execute_equation(equation=f"{{y}} = {{y}} - {new_y}")
-tp.data.operate.execute_equation(equation=f"{{z}} = {{z}} - {new_z}")
-
-
-
-
-# Now, globally rotate XZ plane about this point with desired theta, converted to radian.
-theta = 90
-theta_radian = np.radians(theta)
-tp.data.operate.execute_equation(equation=f"{{x}} = {{x}} * cos({theta_radian}) + {{z}}*sin({theta_radian})")
-tp.data.operate.execute_equation(equation=f"{{z}} = {{z}} * cos({theta_radian}) - {{x}}*sin({theta_radian})")
+  # translate to new XYZ
+  tp.data.operate.execute_equation(equation=f"{{x}} = {{x}} - {new_x}")
+  tp.data.operate.execute_equation(equation=f"{{y}} = {{y}} - {new_y}")
+  tp.data.operate.execute_equation(equation=f"{{z}} = {{z}} - {new_z}")
 
 
 
-def arbitrary_xyz_rotation(alpha, beta, gamma, x=0, y=0, z=0):
-    """
+def rotate_2D(theta, rotation_plane="xy"):
+  """
+  Params:
+  theta - give in degree, made from reference axis, ex: XZ has X as the reference axis.
+  rotation_plane - the plane you would like to rotate about, default is XY, but could be given as XZ, YZ, or some other var named axes.
+  """
+  ds = tp.active_frame().dataset
+  var_ls = [var.name for var in ds.variables()]
+  ref_axis = rotation_plane[0]
+  terminal_axis = rotation_plane[1]
+
+  if ref_axis and terminal_axis not in var_ls:
+     return print("rotation vars not found in dataset")
+  if len(rotation_plane) != 2:
+     return print("invlaid rotation plane")
+  
+  theta_radian = np.radians(theta)
+  # because equations are sequential, intermediate vars must be created.
+  tp.data.operate.execute_equation(equation=f"{{new_ref_axis}} = {{{ref_axis}}} * cos({theta_radian}) + {{{terminal_axis}}}*sin({theta_radian})")
+  tp.data.operate.execute_equation(equation=f"{{new_term_axis}} = {{{terminal_axis}}} * cos({theta_radian}) - {{{ref_axis}}}*sin({theta_radian})")
+
+  tp.data.operate.execute_equation(equation=f"{{{ref_axis}}} = {{new_ref_axis}}")
+  tp.data.operate.execute_equation(equation=f"{{{terminal_axis}}} = {{new_term_axis}}")
+  
+  #axes = tp.active_frame().plot().axes
+  #axes.x_axis.variable = ds.variable('new_x')
+  #axes.y_axis.variable = ds.variable('new_y')
+  return
+
+
+def arbitrary_xyz_rotation(alpha, beta, gamma):
+    """  
+    Currently only set up for cartesian coords with axis names xyz
+
     Params:
     Provide 3 angles in degrees
-    Assumes xyz = origin, but this can be changed.
-
+    
     General rotation matrices taken from https://en.wikipedia.org/wiki/Rotation_matrix
-    Rotations are applied sequentially. I'm sure it could be one equation, but that sounds more confusing.
+    Equations applied are a result of rotational matrix R @ [x,y,z] 
+    where R = R_z @ R_y @ R_x
 
-    3D rotation requires three degrees of freedom
     yaw -> XY -> alpha
     pitch -> XZ -> βeta
     roll -> YZ -> gamma
@@ -69,8 +91,8 @@ def arbitrary_xyz_rotation(alpha, beta, gamma, x=0, y=0, z=0):
                 |      
               β | γ 
                \|/   
-                o----+------ Y
-               / \    
+                o---------- Y
+               / \ 
               /   α
              /       
             X        
@@ -81,18 +103,33 @@ def arbitrary_xyz_rotation(alpha, beta, gamma, x=0, y=0, z=0):
     gamma_rad = np.radians(gamma)
 
     # Order matters! Matrix multiplication not commutative!
+    # Resultant matrix of rotation R = R_z @ R_y @ R_x
+    # R @ [x,y,z] gives the below equations. Because they are applied sequentially, new vars are created.
 
-    # GAMMA/ROLL rotation
-    tp.data.operate.execute_equation(f"{{y}} = {{y}} * cos({gamma_rad}) - {{z}} * sin({gamma_rad})")
-    tp.data.operate.execute_equation(f"{{z}} = {{y}} * sin({gamma_rad}) + {{z}} * cos({gamma_rad})")
+    # ds = tp.active_frame().dataset
+    # var_ls = [var.name for var in ds.variables()]
+    
+    x_prime = f"cos({alpha_rad}) * cos({beta_rad}) * {{x}} + \
+      (cos({alpha_rad}) * sin({beta_rad}) * sin({gamma_rad}) - sin({alpha_rad}) * cos({gamma_rad})) * {{y}} +  \
+      (cos({alpha_rad}) * sin({beta_rad}) * cos({gamma_rad}) + sin({alpha_rad}) * sin({gamma_rad})) * {{z}}"
 
-    # BETA/PITCH rotation
-    tp.data.operate.execute_equation(f"{{x}} = {{x}} * cos({beta_rad}) + {{z}} * sin({beta_rad})")
-    tp.data.operate.execute_equation(f"{{z}} = -{{x}} * sin({beta_rad}) + {{z}} * cos({beta_rad})")
+    y_prime = f"sin({alpha_rad}) * cos({beta_rad}) * {{x}} + \
+      (sin({alpha_rad}) * sin({beta_rad}) * sin({gamma_rad}) + cos({alpha_rad}) * cos({gamma_rad})) * {{y}} + \
+      (sin({alpha_rad}) * sin({beta_rad}) * cos({gamma_rad}) - cos({alpha_rad}) * sin({gamma_rad})) * {{z}}"
 
-    # ALPHA/YAW rotation 
-    tp.data.operate.execute_equation(f"{{x}} = {{x}} * cos({alpha_rad}) - {{y}} * sin({alpha_rad})")
-    tp.data.operate.execute_equation(f"{{y}} = {{x}} * sin({alpha_rad}) + {{y}} * cos({alpha_rad})")
+    z_prime = f"-sin({beta_rad}) * {{x}} + \
+      cos({beta_rad}) * sin({gamma_rad}) * {{y}} + \
+      cos({beta_rad}) * cos({gamma_rad}) * {{z}}"
+    
+    # new vars to behave as intermediate axes
+    tp.data.operate.execute_equation(equation=f"{{x_new}} = {x_prime}")
+    tp.data.operate.execute_equation(equation=f"{{y_new}} = {y_prime}")
+    tp.data.operate.execute_equation(equation=f"{{z_new}} = {z_prime}")
+
+    # Now set them back.
+    tp.data.operate.execute_equation(equation="{x} = {x_new}")
+    tp.data.operate.execute_equation(equation="{y} = {y_new}")
+    tp.data.operate.execute_equation(equation="{z} = {z_new}")
 
     # Get Rotated
     return
