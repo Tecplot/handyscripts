@@ -91,6 +91,55 @@ def close_file():
         raise Exception("close_file Error")
     return ret
 
+def add_dataset_auxdata(key, value):
+    """
+    Adds Dataset Auxiliary Data
+    """
+    key = str(key)
+    value = str(value)
+    tecio.tecauxstr142.restype=ctypes.c_int32
+    tecio.tecauxstr142.argtypes=(
+        ctypes.c_char_p,
+        ctypes.c_char_p)
+    ret = tecio.tecauxstr142(
+            ctypes.c_char_p(bytes(key, encoding="UTF-8")),
+            ctypes.c_char_p(bytes(value, encoding="UTF-8")))
+    return ret
+
+def add_variable_auxdata(varnum, key, value):
+    """
+    Adds Variable Auxiliary Data
+    """
+    key = str(key)
+    value = str(value)
+    tecio.tecvauxstr142.restype=ctypes.c_int32
+    tecio.tecvauxstr142.argtypes=(
+        ctypes.POINTER(ctypes.c_int32), # VarNum
+        ctypes.c_char_p,
+        ctypes.c_char_p)
+    varnum = ctypes.c_int32(varnum)
+    ret = tecio.tecvauxstr142(
+            ctypes.byref(varnum),
+            ctypes.c_char_p(bytes(key, encoding="UTF-8")),
+            ctypes.c_char_p(bytes(value, encoding="UTF-8")))
+    return ret
+
+def add_zone_auxdata(key, value):
+    """
+    Adds Zone Auxiliary Data to the zone that is currently being written to.
+    Must be called immediately after adding a new zone via: teczne or other add_xxx_zone functions.
+    """
+    key = str(key)
+    value = str(value)
+    tecio.teczauxstr142.restype=ctypes.c_int32
+    tecio.teczauxstr142.argtypes=(
+        ctypes.c_char_p,
+        ctypes.c_char_p)
+    ret = tecio.teczauxstr142(
+            ctypes.c_char_p(bytes(key, encoding="UTF-8")),
+            ctypes.c_char_p(bytes(value, encoding="UTF-8")))
+    return ret
+
 def teczne(
     zone_name,
     zone_type,
@@ -472,6 +521,26 @@ def test_ordered(file_name, use_double):
     zone_write_values([1,2,3,4]) #cvals
     close_file()
 
+def test_auxdata(file_name):
+    use_double = False
+    open_file(file_name, "Title", ['x','y','c'], use_double)
+    add_dataset_auxdata("AuxDataString", "AuxDataValue")
+    add_variable_auxdata(1, "XVarAuxDataString", "XVarAuxDataValue")
+    add_variable_auxdata(2, "YVarAuxDataString", "YVarAuxDataValue")
+    add_variable_auxdata(3, "ZVarAuxDataString", "ZVarAuxDataValue")
+    value_locations = [
+        VALUELOCATION_NODECENTERED, # 'x'
+        VALUELOCATION_NODECENTERED, # 'y'
+        VALUELOCATION_CELLCENTERED] # 'c'
+    # Use default values for non-positional arguments (like strand, solution_time, etc)
+    create_ordered_zone("Zone", (3,3,1), value_locations=value_locations)
+    add_zone_auxdata("ZoneAuxData", "ZoneAuxDataValue")
+    zone_write_values([1,2,3,1,2,3,1,2,3]) #xvals
+    zone_write_values([1,1,1,2,2,2,3,3,3]) #yvals
+    # 3x3 zone has 4 elements
+    zone_write_values([1,2,3,4]) #cvals
+    close_file()
+
 def test_ordered_ijk(file_name, use_double, ijk_dim):
     open_file(file_name, "Title", ['x','y','z', 'c'], use_double)
     value_locations = [
@@ -789,3 +858,6 @@ if "--testfelineseg" in sys.argv:
 
 if "--testfemixed" in sys.argv:
     test_fe_mixed("test_fe_mixed.szplt")
+
+if "--testauxdata" in sys.argv:
+    test_auxdata("test_auxdata.plt")
