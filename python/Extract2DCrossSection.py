@@ -9,8 +9,10 @@ Default variables for x,y,z must be changed to match corresponding names in data
 A slice zone is created for each line segment of given polyline.
 Slices are then aligned and a distance variable is calculated.
 2D image of full transect is created and plotted.
+
 """
 import numpy as np
+import types
 import math
 import time
 import tecplot as tp
@@ -85,24 +87,35 @@ def normals_are_similar(n1, n2):
     return -1
 
 
-def extract_slice_segment(x1,y1,x2,y2,z1,distance_offset):
+def extract_slice_segment(x1,y1,x2,y2,distance_offset):
     normal = compute_normal(x1,y1,x2,y2)
     setup_value_blanking(x1,y1,x2,y2)
 
-    slice_zone = tp.data.extract.extract_slice(origin=(x1,y1,0), normal=(normal[0], normal[1], 0))
-
+    slice_zone = tp.data.extract.extract_slice(origin=(x1,y1,0),
+                                               normal=(normal[0], normal[1], 0), 
+                                               transient_mode=TransientOperationMode.AllSolutionTimes)
+    
+    # There may be multiple solution times, 
+    # so we check for SliceGroup generator, instead of a zone.
+    if type(slice_zone) == types.GeneratorType:
+        multiple_slices = True
+        all_slices = [i for i in slice_zone]
+        slice_zone = all_slices[0]
+    else:
+        multiple_slices = False
+    
     xvals = slice_zone.values(x_var)[:]
     yvals = slice_zone.values(y_var)[:]
-    zvals = slice_zone.values(z_var)[:]
-
-    dd = np.sqrt((xvals - x1)**2 + (yvals - y1)**2 ) # + (zvals - z1)**2)
+    dd = np.sqrt((xvals - x1)**2 + (yvals - y1)**2)
 
     # Negate the distance if the point is "behind" the starting point
-    # But what is "behind" and what is "close" 
     nn = [normals_are_similar(normal, compute_normal(x1,y1,x,y)) for x,y in zip(xvals, yvals)]
     dd = dd*nn
-    
-    slice_zone.values('distance')[:] = dd + distance_offset
+    if multiple_slices:
+        for slice in all_slices:
+            slice.values('distance')[:] = dd + distance_offset    
+    else:
+        slice_zone.values('distance')[:] = dd + distance_offset
     tp.active_frame().plot().value_blanking.active = False 
 
     
@@ -111,21 +124,19 @@ with tp.session.suspend():
         poly_zone = ds.zone(polyline_zone_name)
     else:
         raise Exception(f"No zone found with the name '{polyline_zone_name}' ")
-    
+        
     xvals = ds.zone(poly_zone).values(x_var)[:]
     yvals = ds.zone(poly_zone).values(y_var)[:]
-    zvals = ds.zone(poly_zone).values(z_var)[:]
     ds.add_variable('distance')
     cumulative_distance = 0
     for i in range(len(xvals)-1):
         
-        x1,y1,z1 = xvals[i],yvals[i],zvals[i]
-        x2,y2,z2 = xvals[i+1], yvals[i+1],zvals[i+1] 
-        extract_slice_segment(x1,y1,x2,y2,z1, cumulative_distance)
+        x1,y1 = xvals[i],yvals[i]
+        x2,y2 = xvals[i+1], yvals[i+1]
+        extract_slice_segment(x1,y1,x2,y2, cumulative_distance)
         poly_zone.values('distance')[i] = cumulative_distance
-        cumulative_distance += np.sqrt((x2 - x1)**2 + (y2 - y1)**2 ) # + (z2 - z1)**2)
+        cumulative_distance += np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     poly_zone.values('distance')[len(xvals)-1] = cumulative_distance
-    # """"
 
     tp.active_frame().plot_type=PlotType.Cartesian2D
     tp.active_frame().plot().fieldmaps(0).show=False
@@ -147,6 +158,4 @@ with tp.session.suspend():
     tp.macro.execute_command('$!RedrawAll')
 
 print("Time Elapsed:", round(time.time()-start, 3))
-
-
 
