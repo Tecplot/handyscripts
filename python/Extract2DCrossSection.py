@@ -17,7 +17,6 @@ import math
 import time
 import tecplot as tp
 from tecplot.constant import *
-
 tp.session.connect()
 ds = tp.active_frame().dataset
 
@@ -158,4 +157,5 @@ with tp.session.suspend():
     tp.macro.execute_command('$!RedrawAll')
 
 print("Time Elapsed:", round(time.time()-start, 3))
+
 
