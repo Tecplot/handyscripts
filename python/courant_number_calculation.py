@@ -8,8 +8,11 @@ and is linked to the Courant Friedrichs Lewy (CFL) stability condition of numeri
 
 source: https://sim-flow.com/courant-number-in-cfd/
 
+For 2D axis-aligned cases, below courant calculation will yield 0 due to dot product, seek "simple_courant_number_calculation.py" script
+
 We seek a general formulation of the Courant number to work in all structured CFD cases, 
-therefore the equation below is used for dimension i, with corresponding velocity U_i:
+therefore the equation below:
+
 C = (1/2)Δt * (|U_i * n_f| * A_f) / V
 
 U_i - represents velocity in given flow direction
@@ -36,12 +39,12 @@ import time
 tp.session.connect()
 ds = tp.active_frame().dataset
 
-ZONE_NUMBER = 11
-VELOCITY_VAR_NAME = 'VelocityX'
+ZONE_NUMBER = 1
+VELOCITY_VAR_NAME = 'VelocityVec_X'
 
 
 class DefineFEGeom:
-    def __init__(self, x: list, y: list, z: list):
+    def __init__(self, coords):
         """
         params:
         takes a set of x,y,z coords that define given FE element. 
@@ -51,7 +54,7 @@ class DefineFEGeom:
         The compute_face_areas function describes how areas are calcuated 
         and should be referred to for questions regarding results.
         """
-        self.coords = list(zip(x, y, z))
+        self.coords = coords
 
     
     def calculate_vectors(self, vertices, vector_pairs):
@@ -61,6 +64,7 @@ class DefineFEGeom:
         return {
             pair: np.subtract(vertices[pair[1]], vertices[pair[0]]) for pair in vector_pairs
         }
+
 
     def compute_face_areas(self, faces, vectors):
         """ 
@@ -82,6 +86,77 @@ class DefineFEGeom:
             magnitude = np.linalg.norm(area_vector)
             result[face] = (area_vector, magnitude)
         return result
+
+
+    def fe_mixed(self):
+        number_verts = len(self.coords)
+        if number_verts == 3:
+            return self.fe_triangle()
+        elif number_verts == 4:
+            return self.fe_quad()
+        elif number_verts == 8:
+            return self.fe_brick()
+        else:
+            return self.fe_tetra()
+        
+
+    def fe_triangle(self):
+        """
+        Define geometry for an FETriangle zone type.
+        """
+        # Extract the vertices for the triangle
+        vertices = {
+            'n1': np.array(self.coords[0]),
+            'n2': np.array(self.coords[1]),
+            'n3': np.array(self.coords[2]),
+        }
+
+        # Define vector pairs to form the edges of the triangle
+        vector_pairs = [
+            ('n1', 'n2'), ('n1', 'n3')
+        ]
+
+        # Calculate the edge vectors
+        vectors = self.calculate_vectors(vertices, vector_pairs)
+
+        # Compute the area vector using the cross product of two edges
+        area_vector = np.cross(vectors[('n1', 'n2')], vectors[('n1', 'n3')])
+        area = 0.5 * np.linalg.norm(area_vector)  # Triangle area is half the magnitude of the area vector
+        return {"face": (area_vector, area)}
+
+
+    def fe_tetra(self):
+        """
+        Define geometry for an FETetrahedron zone type.
+        """
+        vertices = {
+            'n1': np.array(self.coords[0]),
+            'n2': np.array(self.coords[1]),
+            'n3': np.array(self.coords[2]),
+            'n4': np.array(self.coords[3])
+        }
+
+        vector_pairs = [
+            ('n1', 'n2'), 
+            ('n1', 'n3'),
+            ('n1', 'n4'),
+            ('n2', 'n3'),
+            ('n2', 'n4'),
+            ('n3', 'n4')
+        ]
+
+        # All necessary edges, we define with vector pair.
+        vectors = self.calculate_vectors(vertices, vector_pairs)
+
+        faces = {
+            "Face1": (['n1', 'n2', 'n3'], [('n1', 'n2'), ('n1', 'n3')]),
+            "Face2": (['n1', 'n2', 'n4'], [('n1', 'n2'), ('n1', 'n4')]),
+            "Face3": (['n1', 'n3', 'n4'], [('n1', 'n3'), ('n1', 'n4')]),
+            "Face4": (['n2', 'n3', 'n4'], [('n2', 'n3'), ('n2', 'n4')])
+        }
+
+        return self.compute_face_areas(faces, vectors)
+
 
     def fe_brick(self):
         """
@@ -127,6 +202,7 @@ class DefineFEGeom:
 
         return self.compute_face_areas(faces, vectors)
 
+
     def fe_quad(self):
         """
         Define geometry for an FEQuad zone type.
@@ -149,21 +225,27 @@ class DefineFEGeom:
 
         return {"face": (area_vector, area)}
 
+
     def get_geom_area_vectors(self, zone_type):
         """
         Main function to compute geometry based on the zone type.
         """
         if zone_type == ZoneType.FEBrick:
             return self.fe_brick()
+        elif zone_type == ZoneType.FETetra:
+            return self.fe_tetra()
         elif zone_type == ZoneType.FEQuad:
             return self.fe_quad()
+        elif zone_type == ZoneType.FETriangle:
+            return self.fe_triangle()
+        elif zone_type == ZoneType.FEMixed:
+            return self.fe_mixed()
         else:
             print(f"Zone type {zone_type} has not been defined for this script.")
             return
 
 
-
-def get_cell_volume():
+def get_cell_volume_var():
     """
     Checks for cell volume var.
     """
@@ -180,12 +262,56 @@ def get_representative_time_step():
     return (max(solution_times) - min(solution_times)) / len(solution_times)
 
 
-def calculate_courant_number_for_zone(zone, velocity_var_name: str):
-    """
-    Need to check that cell vol is in dataset and that all vars used are nodal, so that values are stored as if nodal.
+def get_all_vars_as_nodal(zone, velocity_var_name):
+    x = zone.values('X')
+    y = zone.values('Y')
+    z = zone.values('Z')
+    U = zone.values(velocity_var_name)
+    CELL_VOLUME = zone.values('cell volume')
     
+    x_loc = x.location
+    y_loc = y.location
+    z_loc = z.location
+    u_loc = U.location
+    cell_vol_loc = CELL_VOLUME.location
+
+    var_set = {
+        "X": x,
+        "Y": y,
+        "Z": z,
+        velocity_var_name: U, 
+        "Cell Volume": CELL_VOLUME
+    }
+
+    all_var_names = [var.name for var in ds.variables()]
+    for var_name, var_location in zip(var_set.keys(), [x_loc,y_loc,z_loc,u_loc,cell_vol_loc]):
+        if var_location == tp.constant.ValueLocation.Nodal:
+            continue
+        
+        else:
+            # if no nodal var exists, we must make it
+            print(f"Variable {var_name} is cell-centered, creating nodal version for calculation", "\n")
+            tp.data.operate.execute_equation(f"{{{var_name}_Nodal}} = {{{var_name}}}",
+                                             zones=[zone],
+                                             value_location=tp.constant.ValueLocation.Nodal)
+            
+            var_set[var_name] = zone.values(f'{var_name}_Nodal')
+        
+    return var_set
+
+
+def calculate_courant_number_for_zone(zone, velocity_var_name: str, manually_set_timestep=False):
+    """
+    Params:
+    zone - supply zone number
+    velocity_var_name - give the name of your velocity variable in Tecplot
+    manually_set_timestep - enter timestep here if you wish to manually input a value, 
+    defaults to false. 
+    
+    Overview:
     Given zonetype, i.e. FEBrick, we then need to define each face, 
-    which means we need to look at connectivity. FEBrick is defined like so:
+    which means we need to look at connectivity. 
+    Ex: FEBrick is defined like so:
     
         n6---------n7
        / |        / |
@@ -196,162 +322,76 @@ def calculate_courant_number_for_zone(zone, velocity_var_name: str):
      |  /       |  /
      | /        | /
     n1----------n4
-    
-    So long as elements are defined squentially in exactly the same order,  we can compute the needed values.
     """
-    timestep = get_representative_time_step()
-    if timestep == 0:
-        print(f"time step is {timestep} for simulation, courant number will be 0. Is this data transient?")
-        return
+    if manually_set_timestep:
+        timestep = manually_set_timestep
+    else:
+        timestep = get_representative_time_step()
     
+    if timestep == 0:
+        print(f"timestep is {timestep} for simulation, courant number will be 0. Is this data transient?")
+        return
+        
     zone_type = zone.zone_type
-    get_cell_volume()
-    x = zone.values('X')[:]
-    y = zone.values('Y')[:]
-    z = zone.values('Z')[:]
-    U = zone.values(velocity_var_name)[:]
-    CELL_VOLUME = zone.values('cell volume')[:]
-
-    if not list(ds.variables('courant number')):
-        ds.add_variable('courant number')
+    get_cell_volume_var()
+    var_set = get_all_vars_as_nodal(zone, velocity_var_name)
     
     print(f"number of elements: {zone.num_elements}")
     start = time.time()
+    x = var_set['X'].as_numpy_array()
+    y = var_set['Y'].as_numpy_array()
+    z = var_set['Z'].as_numpy_array()
+    xyz_data = np.stack((x,y,z), axis=1)
+    u = var_set[velocity_var_name].as_numpy_array()
+    cell_vol = var_set['Cell Volume'].as_numpy_array()
 
-    for cell_index in range(zone.num_elements):
-        
-        nodemap = zone.nodemap[cell_index]
-        x_nodemap = [x[i] for i in nodemap]
-        y_nodemap = [y[i] for i in nodemap]
-        z_nodemap = [z[i] for i in nodemap]
-        U_node = U[cell_index]
-        cell_vol = CELL_VOLUME[cell_index]
-        
-        cell_geom = DefineFEGeom(x_nodemap, y_nodemap, z_nodemap)
-        area_vectors = cell_geom.get_geom_area_vectors(zone_type=zone_type)
-        courant_number_on_each_face = [calculate_courant_number(timestep, U_node, normal, area, cell_vol) for normal, area in area_vectors.values()]
-        total_courant_number = sum(courant_number_on_each_face)
-        zone.values('courant number')[cell_index] = total_courant_number
-
-        checkpoint_nums = [math.floor(zone.num_elements / 10) * i for i in range(0,9)]
-        if cell_index in checkpoint_nums:
-            print(f"cell index is on {cell_index + 1} out of ~{zone.num_elements}")
-            print(f"time since calculation start: {round(time.time() - start, 2)}", "\n")
-        if cell_index == zone.num_elements-1:
-            finish = time.time()
-            print(f"time taken: {round(finish - start, 2)}")
+    if not list(ds.variables('Courant number')):
+        ds.add_variable('Courant number', locations=ValueLocation.Nodal)
+    zone.values('Courant number')[:] = [0 for _ in range(len(zone.values('Courant number')[:]))]
     
+    start = time.time()
+    with tp.session.suspend():
+        print("calculating Courant number on each element.")
+        checkpoint_nums = [math.floor(zone.num_elements / 10) * i for i in range(0,9)]
+        for element in range(1350, zone.num_elements-63783):
+            original_element_num = element          
+            if zone_type == ZoneType.FEMixed:
+                # for FE-Mixed, retrieve the element number from the section which contains the element. 
+                # This is needed because the "element" number reverts back to 0 for new each nodemapsection.
+                nodemap_section = zone.nodemap.section_element(element)
+                element = nodemap_section[1]
+                nmap = zone.nodemap.nodes(element, section=nodemap_section[0])
+            else:
+                # nodemap access is different for FEClassicNodemap object
+                nmap = np.array(zone.nodemap[element])
+            nmap_coords = xyz_data[nmap]
+            u_node = u[nmap[0]]
+            node_cell_vol = cell_vol[nmap[0]]
+                         
+            cell_geom = DefineFEGeom(nmap_coords)
+            area_vectors = cell_geom.get_geom_area_vectors(zone_type=zone_type)
+
+            courant_number_on_each_face = [calculate_courant_number(timestep, u_node, normal, area, node_cell_vol) for normal, area in area_vectors.values()]
+            total_courant_number = sum(courant_number_on_each_face)
+            zone.values('Courant number')[nmap[0]] = total_courant_number
+            
+            if original_element_num in checkpoint_nums:
+                print(f"On cell {original_element_num + 1} out of ~{zone.num_elements}")
+                print(f"time since calculation start: {round(time.time() - start, 2)}", "\n")
+            if original_element_num == zone.num_elements-1:
+                finish = time.time()
+                print(f"time taken: {round(finish - start, 2)}")
+
+    tp.session.clear_suspend()
+
 
 def calculate_courant_number(t, U, n, A, V):
     U_vector = [U, 0, 0]
+    print(U_vector)
     mag_U_dot_n = abs(np.dot(U_vector, n))
+    print(mag_U_dot_n)
     return ((0.5)*t*mag_U_dot_n*A / V)
 
 
-def define_geom_area_vectors(x: list,y: list,z: list, zone_type):
-    """
-    chatGPT was used to optimize this and make it as fast as pythonically possible :)
-    Returns dict of form:
-    Face: (normal_vector, area)
-
-    Notes: 
-    magnitude of area vector == area
-    algorithm implicitly assumes that the FE element is a parallelogram,
-    This makes highly skewed faces inaccurate.
-    """
-    coords = list(zip(x,y,z))
-    result = {}
-
-    if zone_type == ZoneType.FEBrick:
-        # Define vertices as numpy arrays for performance
-        vertices = {
-            'n1': np.array(coords[0]), 
-            'n2': np.array(coords[1]), 
-            'n3': np.array(coords[2]), 
-            'n4': np.array(coords[3]),
-            'n5': np.array(coords[4]), 
-            'n6': np.array(coords[5]), 
-            'n7': np.array(coords[6]), 
-            'n8': np.array(coords[7])
-        }
-        
-        # Define the vectors between relevant vertices
-        vectors = {
-            ('n1', 'n2'): np.subtract(vertices['n2'], vertices['n1']),
-            ('n1', 'n4'): np.subtract(vertices['n4'], vertices['n1']),
-            ('n2', 'n3'): np.subtract(vertices['n3'], vertices['n2']),
-            ('n3', 'n4'): np.subtract(vertices['n4'], vertices['n3']),
-            ('n5', 'n6'): np.subtract(vertices['n6'], vertices['n5']),
-            ('n5', 'n8'): np.subtract(vertices['n8'], vertices['n5']),
-            ('n6', 'n7'): np.subtract(vertices['n7'], vertices['n6']),
-            ('n7', 'n8'): np.subtract(vertices['n8'], vertices['n7']),
-            ('n1', 'n5'): np.subtract(vertices['n5'], vertices['n1']),
-            ('n2', 'n6'): np.subtract(vertices['n6'], vertices['n2']),
-            ('n3', 'n7'): np.subtract(vertices['n7'], vertices['n3']),
-            ('n4', 'n8'): np.subtract(vertices['n8'], vertices['n4'])
-        }
-
-        # Predefine face vertices and corresponding edges that define them
-        faces = {
-            "Bottom": (['n1', 'n2', 'n3', 'n4'], [('n1', 'n2'), ('n1', 'n4')]),
-            "Top": (['n5', 'n6', 'n7', 'n8'], [('n5', 'n6'), ('n5', 'n8')]),
-            "Front": (['n1', 'n2', 'n6', 'n5'], [('n1', 'n2'), ('n1', 'n5')]),
-            "Back": (['n3', 'n4', 'n8', 'n7'], [('n3', 'n4'), ('n3', 'n7')]),
-            "Left": (['n1', 'n4', 'n8', 'n5'], [('n1', 'n4'), ('n1', 'n5')]),
-            "Right": (['n2', 'n3', 'n7', 'n6'], [('n2', 'n3'), ('n2', 'n6')])
-        }
-        
-        # We get area vector A, which has magnitude of area and direction of normal vector
-        # We are able to use lengths already calculated, and only need to calculate cross-product
-        for face, (verts, edges) in faces.items():
-
-            # No computation, only reference to precomputed vector defn.
-            v1 = vectors[edges[0]] 
-            v2 = vectors[edges[1]]
-
-            # magnitude of area vector == area of parallelogram defined by v1,v2
-            area_vector = np.cross(v1, v2)
-            magnitude = np.linalg.norm(area_vector)
-            result[face] = (area_vector, magnitude)
-        return result
-    
-    elif zone_type == ZoneType.FEQuad:
-        vertices = {
-            'n1': np.array(coords[0]), 
-            'n2': np.array(coords[1]), 
-            'n3': np.array(coords[2]), 
-            'n4': np.array(coords[3])
-        }
-
-        vectors = {
-            ('n1', 'n2'): np.subtract(vertices['n2'], vertices['n1']),
-            ('n1', 'n4'): np.subtract(vertices['n4'], vertices['n1'])
-        }
-
-        # there is only one face... making this easier.
-        area_vector = np.cross(vectors[('n1', 'n2')], vectors[('n1', 'n4')])
-        area = np.linalg.norm(area_vector)
-        result["face"] = (area_vector, area)
-
-        return result
-    
-    
-    else:
-        print(f"zone type {zone_type} has not been defined for this script")
-        return
-
-
 calculate_courant_number_for_zone(ds.zone(ZONE_NUMBER), VELOCITY_VAR_NAME)
-
-
-
-
-
-
-
-
-
-
-
-
 
