@@ -19,15 +19,12 @@ import tecplot as tp
 from tecplot.constant import *
 tp.session.connect()
 ds = tp.active_frame().dataset
+plot = tp.active_frame().plot()
 
 
 polyline_zone_name = "Extracted Points"
-x_var = 'x'
-y_var = 'y'
-z_var = 'z'
 
 
-start = time.time()
 def setup_value_blanking(x1,y1,x2,y2):
     plot = tp.active_frame().plot()
     
@@ -75,7 +72,6 @@ def compute_normal(x1,y1,x2,y2):
     unit_normal = normal_vector / magnitude
 
     # Output the unit normal
-    #print(unit_normal)
     return unit_normal
 
 
@@ -119,15 +115,21 @@ def extract_slice_segment(x1,y1,x2,y2,distance_offset):
 
     
 with tp.session.suspend():
+    start = time.time()
     if polyline_zone_name in [zone.name for zone in ds.zones()]:
         poly_zone = ds.zone(polyline_zone_name)
     else:
+        print("\n")
         raise Exception(f"No zone found with the name '{polyline_zone_name}' ")
-        
+    
+    x_var = plot.axes.x_axis.variable
+    y_var = plot.axes.y_axis.variable
+    z_var = plot.axes.z_axis.variable
     xvals = ds.zone(poly_zone).values(x_var)[:]
     yvals = ds.zone(poly_zone).values(y_var)[:]
     ds.add_variable('distance')
     cumulative_distance = 0
+    print("Found polyline zone, extracting slices.")
     for i in range(len(xvals)-1):
         
         x1,y1 = xvals[i],yvals[i]
@@ -135,6 +137,8 @@ with tp.session.suspend():
         extract_slice_segment(x1,y1,x2,y2, cumulative_distance)
         poly_zone.values('distance')[i] = cumulative_distance
         cumulative_distance += np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    
+    print("Slices extracted, displaying vertical transect.")
     poly_zone.values('distance')[len(xvals)-1] = cumulative_distance
 
     tp.active_frame().plot_type=PlotType.Cartesian2D
@@ -149,12 +153,11 @@ with tp.session.suspend():
     tp.active_frame().plot().axes.y_axis.min = ds.variable(z_var).min()
     tp.active_frame().plot().axes.y_axis.max = ds.variable(z_var).max()
     tp.active_frame().plot().show_contour = True
-    # tp.active_frame().plot().contour(0).variable = ds.variable('distance')
     
     tp.active_frame().plot().show_mesh = True
     tp.active_frame().plot().value_blanking.active = False 
-
     tp.macro.execute_command('$!RedrawAll')
+
 
 print("Time Elapsed:", round(time.time()-start, 3))
 
