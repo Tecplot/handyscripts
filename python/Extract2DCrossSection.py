@@ -4,13 +4,15 @@ or "transect" from a defined polyline zone in Tecplot.
 
 Usage:
 Default behavior searches for a zone titled "Extracted Points" in given dataset. 
-Default variables for x,y,z must be changed to match corresponding names in dataset.
+The variables assigned to x,y, and z-axes are used for computation of distance. 
+
 
 A slice zone is created for each line segment of given polyline.
-Slices are then aligned and a distance variable is calculated.
+The slice is then blanked to fit the polyline segment and extracted.
+Slice zone distance is calculated using previous distance and pythagorean theorem.
 2D image of full transect is created and plotted.
-
 """
+
 import numpy as np
 import types
 import math
