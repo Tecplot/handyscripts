@@ -2,7 +2,7 @@
     Takes value in range of x and outputs interpolated y-value. 
     A way to probe for func values of XY plots.
 
-    Example below uses customlabels.plt datadset included with pytecplot and probes a value of the "Concentration" variable in XY plot. 
+    Example below uses customlabels.plt dataset included with pytecplot and probes a value of the "Concentration" variable in XY plot. 
 """
 import sys
 import tecplot as tp
