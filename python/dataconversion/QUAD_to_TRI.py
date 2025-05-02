@@ -1,4 +1,4 @@
-"""Converts a FE Quad zone to an FE Triangle zone
+"""Converts an FE Quad zone to an FE Triangle zone
 
 usage:
 
@@ -22,11 +22,11 @@ def quad_to_tri(zn, ds, zone_name):
     n_cells = zn.num_elements
     n_nodes = zn.num_points
 
-    # Check if nodemap is truly a FE Triangle nodemap
+    # Check if nodemap is truly an FE Triangle nodemap
     is_tri = any(len(set(lst)) == 3 for lst in nmap)
 
     if not is_tri:
-        print("Not a FE Triangle zone")
+        print("Not an FE Triangle zone")
         return
 
     # Create FE Triangle nodemap from FE Quad nodemap
