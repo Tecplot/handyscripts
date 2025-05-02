@@ -167,10 +167,30 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
             if location == ValueLocation.Nodal:
                 values = get_array_values(zone.num_points, arr, component)
             else:
+                # Value location is cell-centered
                 values = get_array_values(zone.num_elements, arr, component)
 
+                # Cell-centered values for 2D and 3D structured grids require padding:
+                if zone.zone_type == ZoneType.Ordered:
+                    imax, jmax, kmax = zone.dimensions
+                    if zone.rank == 3:
+                        hpadding = np.zeros((kmax-1, jmax-1, 1)) 
+                        vpadding = np.zeros((kmax-1,  1, imax)) 
+                        values = values.reshape((kmax-1, jmax-1, imax-1))
+                        values = np.concatenate((values,hpadding), axis=-1)
+                        values = np.concatenate((values,vpadding), axis=1)
+                    elif zone.rank == 2:
+                        hpadding = np.zeros((jmax-1, 1)) 
+                        values = values.reshape((jmax-1, imax-1))
+                        values = np.concatenate((values,hpadding), axis=-1)
+                    else:
+                        raise("Cell centered values for I-Ordered zones not handled yet.")
+                        
+                    values = values.ravel()
+                    
             if fd_type in [FieldDataType.Float,FieldDataType.Double]:
                 variable.values(zone)[:] = values
+                    
             elif fd_type in [FieldDataType.Byte,FieldDataType.Int16]:
                 variable.values(zone)[:] = values.astype(int)
 
@@ -376,9 +396,12 @@ def add_structured_grid(vtk_dataset, tecplot_dataset):
 
     # TODO - Figure out how to use FieldData
     #fd = vtk_dataset.GetFieldData()
-
+    
     pd = vtk_dataset.GetPointData()
     add_point_data(pd, zone)
+
+    cd = vtk_dataset.GetCellData()
+    add_cell_data(cd, zone)
 
     return zone
 
