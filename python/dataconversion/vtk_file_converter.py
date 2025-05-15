@@ -170,7 +170,7 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
                 # Value location is cell-centered
                 values = get_array_values(zone.num_elements, arr, component)
 
-                # Cell-centered values for 2D and 3D structured grids require padding:
+                # Cell-centered values for 2D and 3D structured grids require padding in Tecplot:
                 if zone.zone_type == ZoneType.Ordered:
                     imax, jmax, kmax = zone.dimensions
                     if zone.rank == 3:
@@ -180,12 +180,22 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
                         values = np.concatenate((values,hpadding), axis=-1)
                         values = np.concatenate((values,vpadding), axis=1)
                     elif zone.rank == 2:
-                        hpadding = np.zeros((jmax-1, 1)) 
-                        values = values.reshape((jmax-1, imax-1))
+                        if kmax == 1:
+                            hpadding = np.zeros((jmax-1, 1))
+                            values = values.reshape((jmax-1, imax-1))
+                        elif jmax == 1:
+                            hpadding = np.zeros((kmax-1, 1))
+                            values = values.reshape((kmax-1, imax-1))
+                        else:  # imax == 1
+                            hpadding = np.zeros((kmax-1, 1))
+                            values = values.reshape((kmax-1, jmax-1))
+ 
                         values = np.concatenate((values,hpadding), axis=-1)
-                    else:
-                        raise("Cell centered values for I-Ordered zones not handled yet.")
-                        
+                    elif zone.rank == 1:
+                        # I-ordered data is not padded in Tecplot, so do not adjust.
+                        pass
+                    else: 
+                        raise(f"rank of {zone} == {zone.rank}, not readable.")
                     values = values.ravel()
                     
             if fd_type in [FieldDataType.Float,FieldDataType.Double]:
@@ -373,7 +383,6 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
             add_connectivity_data(zone, node_map)
     return zone
 
-
 def add_structured_grid(vtk_dataset, tecplot_dataset):
     assert(vtk_dataset.GetDataObjectType() == vtk.VTK_STRUCTURED_GRID)
 
@@ -458,6 +467,7 @@ def add_image_data(vtk_dataset, tecplot_dataset):
 
 def add_vtk_dataset(vtk_dataset, tecplot_dataset):
     data_type = vtk_dataset.GetDataObjectType()
+    print(data_type)
     if data_type in [vtk.VTK_UNSTRUCTURED_GRID, vtk.VTK_POLY_DATA]:
         add_unstructured_grid(vtk_dataset, tecplot_dataset)
     elif data_type == vtk.VTK_STRUCTURED_GRID:
@@ -477,6 +487,8 @@ def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
         reader = vtk.vtkXMLPolyDataReader()
     elif vtk_file.endswith(".vts"):
         reader = vtk.vtkXMLStructuredGridReader()
+
+        print('reading as VTS data')
     elif vtk_file.endswith(".vti"):
         reader = vtk.vtkXMLImageDataReader()
     elif vtk_file.endswith(".pdb"):
@@ -508,6 +520,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     now = time.time()
     print("Converting: ", args.infile)
-    convert_vtk_file(args.infile,args.outfile)
+    convert_vtk_file(args.infile, args.outfile)
     print("File written to: ", args.outfile)
     print("Elapsed: ", time.time()-now)
