@@ -1,0 +1,14 @@
+#!MC 1410
+$!AlterData 
+  Equation = '{x_norm} = x / sqrt(x**2 + y**2 + z**2)'
+$!AlterData 
+  Equation = '{y_norm} = y / sqrt(x**2 + y**2 + z**2)'
+$!AlterData 
+  Equation = '{z_norm} = z / sqrt(x**2 + y**2 + z**2)'
+$!AlterData 
+  Equation = '{rho} = sqrt({x_norm}**2 + {y_norm}**2 + {z_norm}**2)'
+$!AlterData 
+  Equation = '{theta} = atan2({y_norm}, {x_norm})'
+$!AlterData 
+  Equation = '{phi} = atan2(sqrt({y_norm}**2 + {z_norm}**2), {z_norm})'
+
