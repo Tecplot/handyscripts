@@ -1,0 +1,21 @@
+#!MC 1410
+
+# Substitute values in for x1, x2, y1, ...  to define a line in 3D space. 
+# The final equation D, defines distance of all points from that line in space. 
+# You can then use this variable for blanking. 
+# Useful for blanking around some line segment, on boundary or channel of interest.
+
+$!AlterData 
+  Equation = '{a} = x2 - x1 defining line'
+$!AlterData 
+  Equation = '{b} = y2 - y1 defining line'
+$!AlterData 
+  Equation = '{c} = z2 - z1 defining line'
+$!AlterData 
+  Equation = '{dx} = x[zone](first index) - x'
+$!AlterData 
+  Equation = '{dy} = y[zone](first index) - y'
+$!AlterData 
+  Equation = '{dz} = z[zone](first index) - z'
+$!AlterData 
+  Equation = '{D} = sqrt( ({dy}*{c} - {dz} * {b})**2 + ({dz}*{a} - {dx} * {c})**2  + ({dx}*{b} - {dy} * {a})**2 ) / sqrt( {a}**2 + {b}**2 + {c}**2)'
