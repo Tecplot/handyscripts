@@ -115,3 +115,4 @@ dmypy.json
 *.szplt
 blatch.log
 .DS_Store
+.vscode/
