@@ -1,21 +1,32 @@
 #!MC 1410
+# USAGE: Load this eqn file and supply two points below, 
+# P1 = (x1, y1, z1) and P2 = (x2, y2, z2)
+# These points define a line. Result is a new variable D 
+# which shows 3D distance from that line in space. 
 
-# Substitute values in for x1, x2, y1, ...  to define a line in 3D space. 
-# The final equation D, defines distance of all points from that line in space. 
-# You can then use this variable for blanking. 
-# Useful for blanking around some line segment, on boundary or channel of interest.
+# You can probe surfaces to get values for x1, x2, ...
+# Ctrl + click probe gets nearest-node.
+# Do not change anything else. Press calculate.
+
+
 
 $!AlterData 
-  Equation = '{a} = x2 - x1 defining line'
+  Equation = '{x1} = 0'
 $!AlterData 
-  Equation = '{b} = y2 - y1 defining line'
+  Equation = '{y1} = 0'
 $!AlterData 
-  Equation = '{c} = z2 - z1 defining line'
+  Equation = '{z1} = 0'
 $!AlterData 
-  Equation = '{dx} = x[zone](first index) - x'
+  Equation = '{x2} = 0'
 $!AlterData 
-  Equation = '{dy} = y[zone](first index) - y'
+  Equation = '{y2} = 0'
 $!AlterData 
-  Equation = '{dz} = z[zone](first index) - z'
+  Equation = '{z2} = 0'
 $!AlterData 
-  Equation = '{D} = sqrt( ({dy}*{c} - {dz} * {b})**2 + ({dz}*{a} - {dx} * {c})**2  + ({dx}*{b} - {dy} * {a})**2 ) / sqrt( {a}**2 + {b}**2 + {c}**2)'
+  Equation = '{dx} = {x1} - x'
+$!AlterData 
+  Equation = '{dy} = {y1} - y'
+$!AlterData 
+  Equation = '{dz} = {z1} - z'
+$!AlterData 
+  Equation = '{D} = sqrt( ({dy}*({z2} - {z1}) - {dz} * ({y2} - {y1}))**2 + ({dz}*({x2} - {x1}) - {dx} * ({z2} - {z1}))**2  + ({dx}*({y2} - {y1}) - {dy} * ({x2} - {x1}))**2 ) / sqrt( ({x2} - {x1})**2 + ({y2} - {y1})**2 + ({z2} - {z1})**2 )'
