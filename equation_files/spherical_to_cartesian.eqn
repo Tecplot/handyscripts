@@ -1,6 +1,6 @@
 #!MC 1410
 $!AlterData
-  Equation = '{x_cartesian} = {x}*cos({y})*sin({z})
+  Equation = '{x_cartesian} = {x}*cos({y})*sin({z})'
 $!AlterData
   Equation = '{y_cartesian} = {x}*sin({y})*sin({z})'
 $!AlterData
