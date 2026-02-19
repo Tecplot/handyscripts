@@ -116,3 +116,4 @@ dmypy.json
 blatch.log
 .DS_Store
 .vscode/
+pytecplot/
