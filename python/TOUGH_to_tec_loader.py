@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """USAGE:
 Read TOUGH flow.inp file OR read MESH/INCON and build prefix-based layer groups with connectivity. 
 Constructs Tecplot zones with this data and writes presents the data in connected mode or writes it to plt.
@@ -91,58 +90,7 @@ def parse_incon(incon_path):
 
     return data
 
-def parse_mesh(mesh_path):
-    elements = {}
-    edges = []
-
-    in_eleme = False
-    in_conne = False
-
-    with mesh_path.open("r", errors="ignore") as f:
-        for raw in f:
-            line = raw.rstrip("\n")
-            tag = line.strip()
-
-            if tag == "ELEME":
-                in_eleme = True
-                in_conne = False
-                continue
-            if tag == "CONNE":
-                in_eleme = False
-                in_conne = True
-                continue
-            if not tag:
-                continue
-
-            row = line.ljust(80)
-
-            if in_eleme:
-                elem_id = row[0:5]
-                layer_prefix = elem_id[:2]
-                rock_id = row[15:20].strip() or "UNK"
-                volume = _sanitize_volume(_safe_float(row[20:30]))
-                x = _safe_float(row[50:60])
-                y = _safe_float(row[60:70])
-                z = _safe_float(row[70:80])
-                elements[elem_id] = Element(
-                    elem_id=elem_id,
-                    layer_prefix=layer_prefix,
-                    rock_id=rock_id,
-                    volume=volume,
-                    x=x,
-                    y=y,
-                    z=z,
-                )
-
-            elif in_conne:
-                e1 = row[0:5]
-                e2 = row[5:10]
-                if e1 and e2:
-                    edges.append((e1, e2))
-
-    return elements, edges
-
-def parse_flow(flow_path):
+def _parse_tough_blocks(path, parse_incon: bool):
     elements = {}
     edges = []
     incon = {}
@@ -151,7 +99,7 @@ def parse_flow(flow_path):
     in_conne = False
     in_incon = False
 
-    with flow_path.open("r", errors="ignore") as f:
+    with path.open("r", errors="ignore") as f:
         for raw in f:
             line = raw.rstrip("\n")
             tag = line.strip()
@@ -166,7 +114,7 @@ def parse_flow(flow_path):
                 in_conne = True
                 in_incon = False
                 continue
-            if tag.startswith("INCON"):
+            if parse_incon and tag.startswith("INCON"):
                 in_eleme = False
                 in_conne = False
                 in_incon = True
@@ -182,7 +130,6 @@ def parse_flow(flow_path):
                 elem_id = row[0:5]
                 layer_prefix = elem_id[:2]
                 rock_id = row[15:20].strip() or "UNK"
-                # TOUGH fixed-width ELEME fields: volume is columns 21-30.
                 volume = _sanitize_volume(_safe_float(row[20:30]))
                 x = _safe_float(row[50:60])
                 y = _safe_float(row[60:70])
@@ -219,6 +166,14 @@ def parse_flow(flow_path):
                     incon[last_id].extend(_float_list(tokens))
 
     return elements, edges, incon
+
+
+def parse_mesh(mesh_path):
+    elements, edges, _ = _parse_tough_blocks(mesh_path, parse_incon=False)
+    return elements, edges
+
+def parse_flow(flow_path):
+    return _parse_tough_blocks(flow_path, parse_incon=True)
 
 def build_layers(elements, edges):
     by_layer = {}
@@ -298,7 +253,44 @@ def get_layers(flow_path=None, mesh_path=None, incon_path=None):
 
 
 # ------ TECPLOT --------
-def create_tecplot_dataset(layers, vor):
+def _analyze_geometry(layers, tol=1e-9):
+    coords = {"x": [], "y": [], "z": []}
+    for layer in layers:
+        for e in layer.get("elements", []):
+            for k in coords:
+                v = e.get(k)
+                if v == v:
+                    coords[k].append(v)
+
+    ranges = {}
+    for k, vals in coords.items():
+        if not vals:
+            ranges[k] = 0.0
+        else:
+            vmin = min(vals)
+            vmax = max(vals)
+            ranges[k] = abs(vmax - vmin)
+
+    varying = [k for k, r in ranges.items() if r > tol]
+    dim = max(1, len(varying)) if any(coords.values()) else 0
+    axes_order = sorted(ranges.items(), key=lambda kv: kv[1], reverse=True)
+    return {
+        "ranges": ranges,
+        "varying": varying,
+        "dim": dim,
+        "axes_order": [k for k, _ in axes_order],
+    }
+
+
+def _pick_axes(geom):
+    order = geom.get("axes_order", ["x", "y", "z"])
+    x_var = order[0] if len(order) > 0 else "x"
+    y_var = order[1] if len(order) > 1 else "y"
+    z_var = order[2] if len(order) > 2 else "z"
+    return x_var, y_var, z_var
+
+
+def create_tecplot_dataset(layers, vor, geom):
     # id and rock_id are non-numeric... maybe add as aux data...?
     tecplot_vars = [k for k in layers[0].get("elements")[0].keys() if k not in ("id", "rock_id")]
     if vor and "avgz" not in tecplot_vars:
@@ -337,24 +329,42 @@ def create_tecplot_dataset(layers, vor):
         ds.delete_variables(dummy_var)
     return
 
-def set_tecplot_view(vor: bool):
-    frame = ds = tp.active_frame()
+def set_tecplot_view(vor: bool, geom):
+    frame = tp.active_frame()
     ds = frame.dataset
-    
-    if len(list(ds.zones())) < 2:
+
+    dim = geom.get("dim", 2)
+    x_var, y_var, z_var = _pick_axes(geom)
+
+    if dim <= 2:
         frame.plot_type = PlotType.Cartesian2D
         plot = tp.active_frame().plot()
-
     else:
         frame.plot_type = PlotType.Cartesian3D
         plot = tp.active_frame().plot()
-        if vor:
-            plot.axes.z_axis.variable = ds.variable('avgz')
+        if vor and "avgz" in [v.name for v in ds.variables()]:
+            plot.axes.z_axis.variable = ds.variable("avgz")
         else:
-            plot.axes.z_axis.variable = ds.variable('z')
-    
-    plot.axes.x_axis.variable = ds.variable('x')
-    plot.axes.y_axis.variable = ds.variable('y')
+            plot.axes.z_axis.variable = ds.variable(z_var)
+
+    plot.axes.x_axis.variable = ds.variable(x_var)
+    plot.axes.y_axis.variable = ds.variable(y_var)
+
+    plot.show_contour = True
+    plot.show_mesh = True
+
+    fieldmaps = list(plot.fieldmaps())
+    if len(fieldmaps) > 13:
+        fieldmaps[13].show = False
+
+    if dim <= 2:
+        plot.axes.axis_mode = AxisMode.XYDependent
+    else:
+        plot.axes.z_axis.scale_factor = 25.5477
+
+    vars_list = list(ds.variables())
+    if len(vars_list) > 3:
+        plot.contour(0).variable_index = 3
     return
 
 def zone_from_layer(layer: dict, frame: tp.layout.Frame, var_list, vor: bool):
@@ -381,7 +391,13 @@ def zone_from_layer(layer: dict, frame: tp.layout.Frame, var_list, vor: bool):
 
     # Triangulation workflow...
     else:
-        elems = [e for e in elems if (e.get('volume') <= VOLUME_CUTOFF) and (e.get('volume') == e.get('volume'))]
+        elems = [
+            e for e in elems
+            if (e.get('volume') <= VOLUME_CUTOFF)
+            and (e.get('volume') == e.get('volume'))
+            and (e.get('x') == e.get('x'))
+            and (e.get('y') == e.get('y'))
+        ]
         z = ds.add_ordered_zone(layer_name, (len(elems), 1, 1))
     
     # assign var values...
@@ -402,6 +418,11 @@ def zone_from_layer(layer: dict, frame: tp.layout.Frame, var_list, vor: bool):
         plot.axes.x_axis.variable = ds.variable('x')
         plot.axes.y_axis.variable = ds.variable('y')
 
+        points2d = [(e.get('x'), e.get('y')) for e in elems]
+        if _points_are_collinear(points2d):
+            print(f"Skipping triangulation for {layer_name}: points are collinear or insufficient.")
+            return
+
         tp.macro.execute_command(f'''
                                 $!Triangulate 
                                 SourceZones =  [{z.index+1}]
@@ -415,6 +436,25 @@ def zone_from_layer(layer: dict, frame: tp.layout.Frame, var_list, vor: bool):
 
 
 # --- VORONOI BUILDER ---
+def _points_are_collinear(points, tol=1e-9):
+    if len(points) < 3:
+        return True
+    p0 = points[0]
+    p1 = None
+    for p in points[1:]:
+        if p != p0:
+            p1 = p
+            break
+    if p1 is None:
+        return True
+    x0, y0 = p0
+    x1, y1 = p1
+    for x, y in points[1:]:
+        area2 = abs((x1 - x0) * (y - y0) - (y1 - y0) * (x - x0))
+        if area2 > tol:
+            return False
+    return True
+
 def _clip_polygon_to_bbox(poly, xmin, xmax, ymin, ymax):
     def clip(poly, edge):
         out = []
@@ -479,7 +519,8 @@ def _voronoi_finite_polygons_2d(vor, radius: float | None = None, bounds=None):
 
     center = vor.points.mean(axis=0)
     if radius is None:
-        radius = vor.points.ptp().max() * 2.0
+        radius = radius = np.ptp(vor.points, axis=0).max() * 2.0
+
 
     all_ridges = {}
     for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
@@ -707,6 +748,13 @@ def main():
     if args.flow and (args.mesh or args.incon):
         raise SystemExit("Use either --flow or --mesh/--incon, not both.")
     layers = get_layers(args.flow, args.mesh, args.incon)
+    geom = _analyze_geometry(layers)
+
+    if args.voronoi and geom.get("dim", 0) < 2:
+        raise SystemExit(
+            "Voronoi option requires a 2D or 3D mesh. "
+            "This dataset varies along only one axis (1D)."
+        )
     
     if args.connected:
         if args.write:
@@ -725,10 +773,11 @@ def main():
         )
 
     print("\nCreating Tecplot 360 dataset \n")
-    create_tecplot_dataset(layers, args.voronoi)
+    create_tecplot_dataset(layers, args.voronoi, geom)
     
     print("Setting plot view\n")
-    set_tecplot_view(args.voronoi)
+    set_tecplot_view(args.voronoi, geom)
+
     if args.write:
         print("Writing file to PLT \n")
         tp.data.save_tecplot_plt(args.write)
