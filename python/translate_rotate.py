@@ -3,11 +3,11 @@ Given functions for translation and rotation in 2D and 3D.
 
 -- Example usage of arbitrary_xyz_rotation on some line in 3D space --
 
-some_line = tp.active_frame().dataset.zone(zone#)
-x = some_line.values('X(M)')[0] - some_line.values('X(M)')[1]
-y = some_line.values('Y(M)')[0] - some_line.values('Y(M)')[1]
-z = some_line.values('Z(M)')[0] - some_line.values('Z(M)')[1]
-direction_vector = np.array([x, y, z])
+some_line_zone = tp.active_frame().dataset.zone(zone#)
+x_component = some_line_zone.values('X')[0] - some_line_zone.values('X')[1]
+y_component = some_line_zone.values('Y')[0] - some_line_zone.values('Y')[1]
+z_component = some_line_zone.values('Z')[0] - some_line_zone.values('Z')[1]
+direction_vector = np.array([x_component, y_component, z_component])
 d_normalized = direction_vector / np.linalg.norm(direction_vector)
 
 arbitrary_xyz_rotation(normal_vector=d_normalized)
