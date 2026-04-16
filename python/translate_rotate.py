@@ -1,12 +1,22 @@
 """
 Given functions for translation and rotation in 2D and 3D.
 
+-- Example usage of arbitrary_xyz_rotation on some line in 3D space --
+
+some_line = tp.active_frame().dataset.zone(zone#)
+x = some_line.values('X(M)')[0] - some_line.values('X(M)')[1]
+y = some_line.values('Y(M)')[0] - some_line.values('Y(M)')[1]
+z = some_line.values('Z(M)')[0] - some_line.values('Z(M)')[1]
+direction_vector = np.array([x, y, z])
+d_normalized = direction_vector / np.linalg.norm(direction_vector)
+
+arbitrary_xyz_rotation(normal_vector=d_normalized)
+-> data will be re-oriented along that line in space.
 """
 
 import tecplot as tp
 from tecplot.exception import *
 from tecplot.constant import *
-import math
 import numpy as np
 
 def translate_to_XYZ(zone_num, new_x=0 , new_y=0, new_z=0, by_index_num = False, index_num = -1):
@@ -17,9 +27,25 @@ def translate_to_XYZ(zone_num, new_x=0 , new_y=0, new_z=0, by_index_num = False,
   by_index_num - disregards new_x, new_y, new_z to set xyz by index instead.
   index_num - must be set if by_index_num = True
   """
-
-  ds = tp.active_frame().dataset
+  frame = tp.active_frame()
+  plot = frame.plot()
+  ds = frame.dataset
   zone = ds.zone(zone_num)
+  var_ls = [var.name for var in ds.variables()]
+
+  x_var = "x"
+  y_var = "y"
+  z_var = "z"
+
+  try:
+    x_var = plot.axes.x_axis.variable.name
+    y_var = plot.axes.y_axis.variable.name
+    z_var = plot.axes.z_axis.variable.name
+  except AttributeError:
+    pass
+
+  if x_var not in var_ls or y_var not in var_ls or z_var not in var_ls:
+    return print("translation vars not found in dataset")
   
   if by_index_num:
     # supply the zone and index you want to move to. 
@@ -28,15 +54,15 @@ def translate_to_XYZ(zone_num, new_x=0 , new_y=0, new_z=0, by_index_num = False,
        return print("\n", "Must supply valid node/cell index number to translate to...", "\n")
 
     
-    new_x = ds.variable("x").values(zone)[index_num-1] # subtract 1 because Tecplot is 1-indexed, python is 0-indexed. 
-    new_y = ds.variable("y").values(zone)[index_num-1]
-    new_z = ds.variable("z").values(zone)[index_num-1]
+    new_x = ds.variable(x_var).values(zone)[index_num-1] # subtract 1 because Tecplot is 1-indexed, python is 0-indexed. 
+    new_y = ds.variable(y_var).values(zone)[index_num-1]
+    new_z = ds.variable(z_var).values(zone)[index_num-1]
      
 
   # translate to new XYZ
-  tp.data.operate.execute_equation(equation=f"{{x}} = {{x}} - {new_x}")
-  tp.data.operate.execute_equation(equation=f"{{y}} = {{y}} - {new_y}")
-  tp.data.operate.execute_equation(equation=f"{{z}} = {{z}} - {new_z}")
+  tp.data.operate.execute_equation(equation=f"{{{x_var}}} = {{{x_var}}} - {new_x}")
+  tp.data.operate.execute_equation(equation=f"{{{y_var}}} = {{{y_var}}} - {new_y}")
+  tp.data.operate.execute_equation(equation=f"{{{z_var}}} = {{{z_var}}} - {new_z}")
 
 
 
@@ -46,12 +72,25 @@ def rotate_2D(theta, rotation_plane="xy"):
   theta - give in degree, made from reference axis, ex: XZ has X as the reference axis.
   rotation_plane - the plane you would like to rotate about, default is XY, but could be given as XZ, YZ, or some other var named axes.
   """
-  ds = tp.active_frame().dataset
+  frame = tp.active_frame()
+  plot = frame.plot()
+  ds = frame.dataset
   var_ls = [var.name for var in ds.variables()]
-  ref_axis = rotation_plane[0]
-  terminal_axis = rotation_plane[1]
+  axis_map = {}
 
-  if ref_axis and terminal_axis not in var_ls:
+  try:
+     axis_map = {
+        "x": plot.axes.x_axis.variable.name,
+        "y": plot.axes.y_axis.variable.name,
+        "z": plot.axes.z_axis.variable.name
+     }
+  except AttributeError:
+     axis_map = {"x": "x", "y": "y", "z": "z"}
+
+  ref_axis = axis_map.get(rotation_plane[0].lower(), rotation_plane[0])
+  terminal_axis = axis_map.get(rotation_plane[1].lower(), rotation_plane[1])
+
+  if ref_axis not in var_ls or terminal_axis not in var_ls:
      return print("rotation vars not found in dataset")
   if len(rotation_plane) != 2:
      return print("invlaid rotation plane")
@@ -70,12 +109,12 @@ def rotate_2D(theta, rotation_plane="xy"):
   return
 
 
-def arbitrary_xyz_rotation(alpha, beta, gamma):
-    """  
-    Currently only set up for cartesian coords with axis names xyz
-
+def arbitrary_xyz_rotation(alpha=0, beta=0, gamma=0, normal_vector=None):
+    r"""  
     Params:
-    Provide 3 angles in degrees
+    Provide 3 angles in degrees, or supply normal_vector=(nx, ny, nz).
+    If normal_vector is supplied, it takes precedence over alpha/beta/gamma and
+    constructs a right-handed basis whose z-axis is aligned with that direction.
     
     General rotation matrices taken from https://en.wikipedia.org/wiki/Rotation_matrix
     Equations applied are a result of rotational matrix R @ [x,y,z] 
@@ -98,28 +137,79 @@ def arbitrary_xyz_rotation(alpha, beta, gamma):
             X        
     """
 
-    alpha_rad = np.radians(alpha)
-    beta_rad = np.radians(beta)
-    gamma_rad = np.radians(gamma)
+    frame = tp.active_frame()
+    plot = frame.plot()
+    ds = frame.dataset
+    var_ls = [var.name for var in ds.variables()]
 
-    # Order matters! Matrix multiplication not commutative!
-    # Resultant matrix of rotation R = R_z @ R_y @ R_x
-    # R @ [x,y,z] gives the below equations. Because they are applied sequentially, new vars are created.
+    x_var = "x"
+    y_var = "y"
+    z_var = "z"
 
-    # ds = tp.active_frame().dataset
-    # var_ls = [var.name for var in ds.variables()]
-    
-    x_prime = f"cos({alpha_rad}) * cos({beta_rad}) * {{x}} + \
-      (cos({alpha_rad}) * sin({beta_rad}) * sin({gamma_rad}) - sin({alpha_rad}) * cos({gamma_rad})) * {{y}} +  \
-      (cos({alpha_rad}) * sin({beta_rad}) * cos({gamma_rad}) + sin({alpha_rad}) * sin({gamma_rad})) * {{z}}"
+    try:
+        x_var = plot.axes.x_axis.variable.name
+        y_var = plot.axes.y_axis.variable.name
+        z_var = plot.axes.z_axis.variable.name
+    except AttributeError:
+        pass
 
-    y_prime = f"sin({alpha_rad}) * cos({beta_rad}) * {{x}} + \
-      (sin({alpha_rad}) * sin({beta_rad}) * sin({gamma_rad}) + cos({alpha_rad}) * cos({gamma_rad})) * {{y}} + \
-      (sin({alpha_rad}) * sin({beta_rad}) * cos({gamma_rad}) - cos({alpha_rad}) * sin({gamma_rad})) * {{z}}"
+    if x_var not in var_ls or y_var not in var_ls or z_var not in var_ls:
+        return print("rotation vars not found in dataset")
 
-    z_prime = f"-sin({beta_rad}) * {{x}} + \
-      cos({beta_rad}) * sin({gamma_rad}) * {{y}} + \
-      cos({beta_rad}) * cos({gamma_rad}) * {{z}}"
+    def build_linear_expr(coeffs):
+        terms = []
+        axis_vars = (x_var, y_var, z_var)
+
+        for coeff, axis_var in zip(coeffs, axis_vars):
+            if np.isclose(coeff, 0.0):
+                coeff = 0.0
+            terms.append(f"({coeff}) * {{{axis_var}}}")
+
+        return " + ".join(terms)
+
+    if normal_vector is not None:
+        z_axis = np.asarray(normal_vector, dtype=float).reshape(-1)
+        if z_axis.size != 3:
+            return print("normal_vector must contain exactly 3 values")
+
+        z_axis_norm = np.linalg.norm(z_axis)
+        if np.isclose(z_axis_norm, 0.0):
+            return print("normal_vector must be non-zero")
+        z_axis = z_axis / z_axis_norm
+
+        ref_axis = np.array([0.0, 0.0, 1.0])
+        if np.isclose(abs(np.dot(z_axis, ref_axis)), 1.0):
+            ref_axis = np.array([0.0, 1.0, 0.0])
+
+        x_axis = np.cross(ref_axis, z_axis)
+        x_axis = x_axis / np.linalg.norm(x_axis)
+        y_axis = np.cross(z_axis, x_axis)
+
+        # Re-express coordinates in a basis whose +z axis points along the
+        # supplied direction vector.
+        x_prime = build_linear_expr(x_axis)
+        y_prime = build_linear_expr(y_axis)
+        z_prime = build_linear_expr(z_axis)
+    else:
+        alpha_rad = np.radians(alpha)
+        beta_rad = np.radians(beta)
+        gamma_rad = np.radians(gamma)
+
+        # Order matters! Matrix multiplication not commutative!
+        # Resultant matrix of rotation R = R_z @ R_y @ R_x
+        # R @ [x,y,z] gives the below equations. Because they are applied sequentially, new vars are created.
+        
+        x_prime = f"cos({alpha_rad}) * cos({beta_rad}) * {{{x_var}}} + \
+          (cos({alpha_rad}) * sin({beta_rad}) * sin({gamma_rad}) - sin({alpha_rad}) * cos({gamma_rad})) * {{{y_var}}} +  \
+          (cos({alpha_rad}) * sin({beta_rad}) * cos({gamma_rad}) + sin({alpha_rad}) * sin({gamma_rad})) * {{{z_var}}}"
+
+        y_prime = f"sin({alpha_rad}) * cos({beta_rad}) * {{{x_var}}} + \
+          (sin({alpha_rad}) * sin({beta_rad}) * sin({gamma_rad}) + cos({alpha_rad}) * cos({gamma_rad})) * {{{y_var}}} + \
+          (sin({alpha_rad}) * sin({beta_rad}) * cos({gamma_rad}) - cos({alpha_rad}) * sin({gamma_rad})) * {{{z_var}}}"
+
+        z_prime = f"-sin({beta_rad}) * {{{x_var}}} + \
+          cos({beta_rad}) * sin({gamma_rad}) * {{{y_var}}} + \
+          cos({beta_rad}) * cos({gamma_rad}) * {{{z_var}}}"
     
     # new vars to behave as intermediate axes
     tp.data.operate.execute_equation(equation=f"{{x_new}} = {x_prime}")
@@ -127,9 +217,9 @@ def arbitrary_xyz_rotation(alpha, beta, gamma):
     tp.data.operate.execute_equation(equation=f"{{z_new}} = {z_prime}")
 
     # Now set them back.
-    tp.data.operate.execute_equation(equation="{x} = {x_new}")
-    tp.data.operate.execute_equation(equation="{y} = {y_new}")
-    tp.data.operate.execute_equation(equation="{z} = {z_new}")
+    tp.data.operate.execute_equation(equation=f"{{{x_var}}} = {{x_new}}")
+    tp.data.operate.execute_equation(equation=f"{{{y_var}}} = {{y_new}}")
+    tp.data.operate.execute_equation(equation=f"{{{z_var}}} = {{z_new}}")
 
     # Get Rotated
     return
