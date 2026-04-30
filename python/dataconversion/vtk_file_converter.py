@@ -1,7 +1,7 @@
 """
 This script runs in batch mode and converts files readable by VTK (.vtu, .vtp,
-.vts, .vti, .pdb) to Tecplot PLT format. This file may also be imported and used
-as a module (see example usage in pvd_file_converter.py).
+.vts, .vti, .pdb, .xmf, .xdmf) to Tecplot PLT format. This file may also be
+imported and used as a module (see example usage in pvd_file_converter.py).
 
 
 Additional Python modules needed:
@@ -37,9 +37,8 @@ Known script limitations/issues:
  - Poly data left/right elements aren't set correctly. This can cause issues
    with polyhedral shading.
  - Quadratic elements are imported as linear elements
- - Multi-block grids aren't currently processed. It is only coded for
-   files that return a single grid.
- - Currently supported file formats: .vtu, .vtp, .vts, .vti, .pdb
+ - Currently supported file formats: .vtk, .vtu, .vtp, .vts, .vti, .vtkhdf,
+   .hdf, .pdb, .xmf, .xdmf
 
  - If you have any comments about this script, let us know at support@tecplot.com,
    or if you have improvements, send us a Pull Request!
@@ -52,6 +51,10 @@ import vtk
 import tecplot as tp
 from tecplot.constant import *
 import time
+
+
+DEFAULT_ZONE_NAME = "NO ZONE NAME"
+COORDINATE_VARIABLE_NAMES = ('x', 'y', 'z')
 
 
 def field_data_type(vtk_data_type):
@@ -69,6 +72,217 @@ def field_data_type(vtk_data_type):
     type_dict[vtk.VTK_FLOAT]         = FieldDataType.Float
     type_dict[vtk.VTK_DOUBLE]        = FieldDataType.Double
     return type_dict[vtk_data_type]
+
+def component_variable_name(name, num_components, component):
+    if num_components == 1:
+        return name
+
+    # Special case for 3 & 6 components to match ParaView's behavior
+    if num_components == 3:
+        suffix = ['_X', '_Y', '_Z']
+    elif num_components == 6:
+        suffix = ['_XX', '_YY', '_ZZ', '_XY', '_YZ', '_XZ']
+    else:
+        # Otherwise use '_1', '_2', '_3', etc. for the suffix.
+        suffix = ["_"+str(i+1) for i in range(num_components)]
+    return name+suffix[component]
+
+def vtk_data_specs(data, location):
+    specs = []
+    for i in range(data.GetNumberOfArrays()):
+        arr = data.GetArray(i)
+        if arr == None:
+            continue
+
+        fd_type = field_data_type(arr.GetDataType())
+        name = arr.GetName()
+        num_components = arr.GetNumberOfComponents()
+        for component in range(num_components):
+            specs.append((component_variable_name(name, num_components, component), fd_type, location))
+    return specs
+
+def image_data_specs(vtk_dataset):
+    specs = []
+    pd = vtk_dataset.GetPointData()
+    for i in range(pd.GetNumberOfArrays()):
+        arr = pd.GetArray(i)
+        if arr == None:
+            continue
+        specs.append((arr.GetName(), field_data_type(arr.GetDataType()), ValueLocation.Nodal))
+    return specs
+
+def add_occurrence_keys(specs):
+    counts = dict()
+    keyed_specs = []
+    for name, fd_type, location in specs:
+        occurrence = counts.get(name, 0)
+        counts[name] = occurrence + 1
+        keyed_specs.append((name, occurrence, fd_type, location))
+    return keyed_specs
+
+def has_default_coordinate_variables(tecplot_dataset):
+    if tecplot_dataset.num_variables < 3:
+        return False
+    return tecplot_dataset.variable_names[:3] == list(COORDINATE_VARIABLE_NAMES)
+
+def coordinate_specs():
+    return [(name, FieldDataType.Float, ValueLocation.Nodal) for name in COORDINATE_VARIABLE_NAMES]
+
+def coordinate_name_counts(tecplot_dataset):
+    counts = dict()
+    if has_default_coordinate_variables(tecplot_dataset):
+        for name in COORDINATE_VARIABLE_NAMES:
+            counts[name] = counts.get(name, 0) + 1
+    return counts
+
+def add_variable(tecplot_dataset, name, fd_type=None, location=None):
+    kwargs = dict()
+    if fd_type is not None:
+        kwargs['dtypes'] = [fd_type] if tecplot_dataset.num_zones == 0 else fd_type
+    if location is not None:
+        kwargs['locations'] = [location] if tecplot_dataset.num_zones == 0 else location
+    return tecplot_dataset.add_variable(name, **kwargs)
+
+def ensure_coordinate_variables(tecplot_dataset):
+    if tecplot_dataset.num_variables == 0:
+        for name in COORDINATE_VARIABLE_NAMES:
+            add_variable(tecplot_dataset, name, FieldDataType.Float, ValueLocation.Nodal)
+
+def dataset_variable_keys(tecplot_dataset):
+    counts = dict()
+    for i, name in enumerate(tecplot_dataset.variable_names):
+        occurrence = counts.get(name, 0)
+        counts[name] = occurrence + 1
+        yield i, (name, occurrence)
+
+def get_variable_by_occurrence(tecplot_dataset, name, occurrence):
+    count = 0
+    for i, variable_name in enumerate(tecplot_dataset.variable_names):
+        if variable_name == name:
+            if count == occurrence:
+                return tecplot_dataset.variable(i)
+            count += 1
+    return None
+
+def ensure_variables(tecplot_dataset, keyed_specs):
+    existing_name_counts = dict()
+    for name in tecplot_dataset.variable_names:
+        existing_name_counts[name] = existing_name_counts.get(name, 0) + 1
+
+    for name, occurrence, fd_type, location in keyed_specs:
+        while existing_name_counts.get(name, 0) <= occurrence:
+            add_variable(tecplot_dataset, name, fd_type, location)
+            existing_name_counts[name] = existing_name_counts.get(name, 0) + 1
+
+def existing_variable_type_and_location(tecplot_dataset, variable_index):
+    if tecplot_dataset.num_zones == 0:
+        return FieldDataType.Float, ValueLocation.Nodal
+
+    zone = tecplot_dataset.zone(0)
+    array = zone.values(variable_index)
+    return array.data_type, array.location
+
+def zone_variable_layout(tecplot_dataset, keyed_specs):
+    spec_lookup = dict()
+    for name, occurrence, fd_type, location in keyed_specs:
+        spec_lookup[(name, occurrence)] = (fd_type, location)
+
+    dtypes = []
+    locations = []
+    for variable_index, variable_key in dataset_variable_keys(tecplot_dataset):
+        if variable_key in spec_lookup:
+            fd_type, location = spec_lookup[variable_key]
+        elif variable_index < 3:
+            fd_type, location = existing_variable_type_and_location(tecplot_dataset, variable_index)
+            location = ValueLocation.Nodal
+        else:
+            fd_type, location = existing_variable_type_and_location(tecplot_dataset, variable_index)
+        dtypes.append(fd_type)
+        locations.append(location)
+    return dtypes, locations
+
+def prepare_vtk_dataset_variables(vtk_dataset, tecplot_dataset, include_cell_data=True):
+    ensure_coordinate_variables(tecplot_dataset)
+
+    specs = []
+    if has_default_coordinate_variables(tecplot_dataset):
+        specs.extend(coordinate_specs())
+    specs.extend(vtk_data_specs(vtk_dataset.GetPointData(), ValueLocation.Nodal))
+    if include_cell_data:
+        specs.extend(vtk_data_specs(vtk_dataset.GetCellData(), ValueLocation.CellCentered))
+
+    keyed_specs = add_occurrence_keys(specs)
+    ensure_variables(tecplot_dataset, keyed_specs)
+    return keyed_specs
+
+def prepare_image_data_variables(vtk_dataset, tecplot_dataset):
+    ensure_coordinate_variables(tecplot_dataset)
+
+    specs = []
+    if has_default_coordinate_variables(tecplot_dataset):
+        specs.extend(coordinate_specs())
+    specs.extend(image_data_specs(vtk_dataset))
+
+    keyed_specs = add_occurrence_keys(specs)
+    ensure_variables(tecplot_dataset, keyed_specs)
+    return keyed_specs
+
+def get_vtk_reader(vtk_file):
+    vtk_file_lower = vtk_file.lower()
+    if vtk_file_lower.endswith(".vtk"):
+        return vtk.vtkDataSetReader()
+    elif vtk_file_lower.endswith(".vtu"):
+        return vtk.vtkXMLUnstructuredGridReader()
+    elif vtk_file_lower.endswith(".vtp"):
+        return vtk.vtkXMLPolyDataReader()
+    elif vtk_file_lower.endswith(".vts"):
+        return vtk.vtkXMLStructuredGridReader()
+    elif vtk_file_lower.endswith(".vti"):
+        return vtk.vtkXMLImageDataReader()
+    elif vtk_file_lower.endswith(".pdb"):
+        return vtk.vtkPDBReader()
+    elif vtk_file_lower.endswith(".vtkhdf") or vtk_file_lower.endswith(".hdf"):
+        return vtk.vtkHDFReader()
+    elif vtk_file_lower.endswith(".xmf") or vtk_file_lower.endswith(".xdmf"):
+        return vtk.vtkXdmfReader()
+
+    raise ValueError("Unsupported VTK file type: {}".format(vtk_file))
+
+def reader_time_steps(reader):
+    info = reader.GetOutputInformation(0)
+    key = vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS()
+    if not info or not info.Has(key):
+        return []
+    return [info.Get(key, i) for i in range(info.Length(key))]
+
+def metadata_name(metadata):
+    if metadata and metadata.Has(vtk.vtkCompositeDataSet.NAME()):
+        return metadata.Get(vtk.vtkCompositeDataSet.NAME())
+    return None
+
+def is_composite_dataset(vtk_dataset):
+    return vtk_dataset and vtk_dataset.IsA("vtkCompositeDataSet")
+
+def add_composite_dataset(vtk_dataset, tecplot_dataset, zone_name=None):
+    zones = []
+    iterator = vtk_dataset.NewIterator()
+    iterator.SkipEmptyNodesOn()
+    iterator.VisitOnlyLeavesOn()
+    iterator.InitTraversal()
+
+    block_number = 0
+    while not iterator.IsDoneWithTraversal():
+        block = iterator.GetCurrentDataObject()
+        block_name = None
+        if iterator.HasCurrentMetaData():
+            block_name = metadata_name(iterator.GetCurrentMetaData())
+        if not block_name:
+            parent_name = zone_name if zone_name else vtk_dataset.GetClassName()
+            block_name = "{} Block {}".format(parent_name, block_number)
+        zones.extend(add_vtk_dataset(block, tecplot_dataset, block_name))
+        block_number += 1
+        iterator.GoToNextItem()
+    return zones
 
 def zone_type(vtk_cell_type):
     print("Cell Type:", vtk_cell_type)
@@ -131,6 +345,14 @@ def get_points(output):
         points[i] = output.GetPoint(i)
     return points.transpose()
 
+def get_dimensions(vtk_dataset):
+    try:
+        return vtk_dataset.GetDimensions()
+    except TypeError:
+        dims = [0, 0, 0]
+        vtk_dataset.GetDimensions(dims)
+        return tuple(dims)
+
 def get_array_values(dims, arr, component):
     data = vtk.vtkDoubleArray()
     arr.GetData(0,arr.GetNumberOfTuples()-1,component,component,data)
@@ -138,31 +360,27 @@ def get_array_values(dims, arr, component):
     data.ExportToVoidPointer(values)
     return values.ravel()
 
-def add_vtk_data(data, zone, location=ValueLocation.Nodal):
+def add_vtk_data(data, zone, location=ValueLocation.Nodal, name_counts=None):
+    if name_counts is None:
+        name_counts = dict()
+
     for i in range(data.GetNumberOfArrays()):
         arr = data.GetArray(i)
         if arr == None:
             print("Skipping empty array")
             continue
-        type = arr.GetDataType()
-        fd_type = field_data_type(type)
+        vtk_type = arr.GetDataType()
+        fd_type = field_data_type(vtk_type)
         name = arr.GetName()
         num_components = arr.GetNumberOfComponents()
         for component in range(num_components):
-            if num_components == 1:
-                full_name = name
-            else:
-                # Special case for 3 & 6 components to match ParaView's behavior
-                if num_components == 3:
-                    suffix = ['_X', '_Y', '_Z']
-                elif num_components == 6:
-                    suffix = ['_XX', '_YY', '_ZZ', '_XY', '_YZ', '_XZ']
-                else:
-                    # Otherise use '_1', '_2', '_3', etc. for the suffix
-                    suffix = ["_"+str(i+1) for i in range(num_components)]
-                full_name = name+suffix[component]
+            full_name = component_variable_name(name, num_components, component)
+            occurrence = name_counts.get(full_name, 0)
+            name_counts[full_name] = occurrence + 1
 
-            variable = zone.dataset.add_variable(full_name, dtypes = [fd_type], locations=location)
+            variable = get_variable_by_occurrence(zone.dataset, full_name, occurrence)
+            if variable is None:
+                variable = add_variable(zone.dataset, full_name, fd_type, location)
 
             if location == ValueLocation.Nodal:
                 values = get_array_values(zone.num_points, arr, component)
@@ -204,11 +422,11 @@ def add_vtk_data(data, zone, location=ValueLocation.Nodal):
             elif fd_type in [FieldDataType.Byte,FieldDataType.Int16]:
                 variable.values(zone)[:] = values.astype(int)
 
-def add_point_data(pd, zone):
-    add_vtk_data(pd, zone, location=ValueLocation.Nodal)
+def add_point_data(pd, zone, name_counts=None):
+    add_vtk_data(pd, zone, location=ValueLocation.Nodal, name_counts=name_counts)
 
-def add_cell_data(cd, zone):
-    add_vtk_data(cd, zone, location=ValueLocation.CellCentered)
+def add_cell_data(cd, zone, name_counts=None):
+    add_vtk_data(cd, zone, location=ValueLocation.CellCentered, name_counts=name_counts)
 
 def get_cell_connectivity(vtk_cell, zone_type):
     cell_type = vtk_cell.GetCellType()
@@ -315,7 +533,7 @@ def add_face_map(zone, face_map):
     elements = (left_elements, right_elements)
     zone.facemap.set_mapping(faces, elements)
 
-def add_unstructured_grid(vtk_dataset, tecplot_dataset):
+def add_unstructured_grid(vtk_dataset, tecplot_dataset, zone_name=DEFAULT_ZONE_NAME):
     assert(vtk_dataset)
     assert(vtk_dataset.GetDataObjectType() in [vtk.VTK_UNSTRUCTURED_GRID, vtk.VTK_POLY_DATA])
 
@@ -325,13 +543,8 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
     if num_points == 0:
         return
 
-    if tecplot_dataset.num_variables == 0:
-        # Add the XYZ variables - a dataset needs one variable before you can add a zone
-        tecplot_dataset.add_variable('x', dtypes = [FieldDataType.Float])
-        tecplot_dataset.add_variable('y', dtypes = [FieldDataType.Float])
-        tecplot_dataset.add_variable('z', dtypes = [FieldDataType.Float])
-
-    zone_name = "NO ZONE NAME"
+    keyed_specs = prepare_vtk_dataset_variables(vtk_dataset, tecplot_dataset, include_cell_data=bool(num_cells))
+    dtypes, locations = zone_variable_layout(tecplot_dataset, keyed_specs)
 
     if num_cells:
         cell_types = set()
@@ -353,14 +566,17 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
             # true number of cells
             #
             num_cells = len(node_map)
-            zone = tecplot_dataset.add_fe_zone(zn_type, zone_name, num_points, num_cells)
+            zone = tecplot_dataset.add_fe_zone(zn_type, zone_name, num_points, num_cells,
+                                               dtypes=dtypes, locations=locations)
         elif is_polytope_zone(zn_type):
             face_map = get_face_map(vtk_dataset, zn_type)
-            zone = tecplot_dataset.add_poly_zone(zn_type, zone_name, num_points, num_cells, len(face_map))
+            zone = tecplot_dataset.add_poly_zone(zn_type, zone_name, num_points, num_cells,
+                                                 len(face_map), dtypes=dtypes, locations=locations)
     else:
         # No Cells!
         assert(num_points >= 1)
-        zone = tecplot_dataset.add_ordered_zone(zone_name, (num_points,1,1))
+        zone = tecplot_dataset.add_ordered_zone(zone_name, (num_points,1,1),
+                                               dtypes=dtypes, locations=locations)
 
     # Write XYZ values
     xyz_points = get_points(vtk_dataset)
@@ -371,31 +587,26 @@ def add_unstructured_grid(vtk_dataset, tecplot_dataset):
     # TODO - Figure out how to use FieldData
     #fd = vtk_dataset.GetFieldData()
 
+    name_counts = coordinate_name_counts(tecplot_dataset)
     pd = vtk_dataset.GetPointData()
-    add_point_data(pd, zone)
+    add_point_data(pd, zone, name_counts=name_counts)
 
     if num_cells:
         cd = vtk_dataset.GetCellData()
-        add_cell_data(cd, zone)
+        add_cell_data(cd, zone, name_counts=name_counts)
         if is_polytope_zone(zone.zone_type):
             add_face_map(zone, face_map)
         else:
             add_connectivity_data(zone, node_map)
     return zone
 
-def add_structured_grid(vtk_dataset, tecplot_dataset):
+def add_structured_grid(vtk_dataset, tecplot_dataset, zone_name=DEFAULT_ZONE_NAME):
     assert(vtk_dataset.GetDataObjectType() == vtk.VTK_STRUCTURED_GRID)
 
-    if tecplot_dataset.num_variables == 0:
-        # Add the XYZ variables - a dataset needs one variable before you can add a zone
-        tecplot_dataset.add_variable('x', dtypes = [FieldDataType.Float])
-        tecplot_dataset.add_variable('y', dtypes = [FieldDataType.Float])
-        tecplot_dataset.add_variable('z', dtypes = [FieldDataType.Float])
-
-    zone_name = "NO ZONE NAME"
-
-    dims = vtk_dataset.GetDimensions()
-    zone = tecplot_dataset.add_ordered_zone(zone_name, dims)
+    dims = get_dimensions(vtk_dataset)
+    keyed_specs = prepare_vtk_dataset_variables(vtk_dataset, tecplot_dataset)
+    dtypes, locations = zone_variable_layout(tecplot_dataset, keyed_specs)
+    zone = tecplot_dataset.add_ordered_zone(zone_name, dims, dtypes=dtypes, locations=locations)
 
     # Write XYZ values
     xyz_points = get_points(vtk_dataset)
@@ -406,31 +617,30 @@ def add_structured_grid(vtk_dataset, tecplot_dataset):
     # TODO - Figure out how to use FieldData
     #fd = vtk_dataset.GetFieldData()
     
+    name_counts = coordinate_name_counts(tecplot_dataset)
     pd = vtk_dataset.GetPointData()
-    add_point_data(pd, zone)
+    add_point_data(pd, zone, name_counts=name_counts)
 
     cd = vtk_dataset.GetCellData()
-    add_cell_data(cd, zone)
+    add_cell_data(cd, zone, name_counts=name_counts)
 
     return zone
 
-def add_image_data(vtk_dataset, tecplot_dataset):
+def add_image_data(vtk_dataset, tecplot_dataset, zone_name=DEFAULT_ZONE_NAME):
     assert(vtk_dataset.GetDataObjectType() == vtk.VTK_IMAGE_DATA)
 
-    dims = vtk_dataset.GetDimensions()
+    dims = get_dimensions(vtk_dataset)
     pd = vtk_dataset.GetPointData()
 
-    var_names = ['x', 'y', 'z']
+    keyed_specs = prepare_image_data_variables(vtk_dataset, tecplot_dataset)
+    dtypes, locations = zone_variable_layout(tecplot_dataset, keyed_specs)
+
+    var_names = list(COORDINATE_VARIABLE_NAMES)
     for i in range(pd.GetNumberOfArrays()):
         arr = pd.GetArray(i)
         var_names.append(arr.GetName())
 
-    zone_name = "NO ZONE NAME"
-    # Add the XYZ variables - a dataset needs one variable before you can add a zone
-    tecplot_dataset.add_variable(var_names[0], dtypes = [FieldDataType.Float])
-    tecplot_dataset.add_variable(var_names[1], dtypes = [FieldDataType.Float])
-    tecplot_dataset.add_variable(var_names[2], dtypes = [FieldDataType.Float])
-    zone = tecplot_dataset.add_ordered_zone(zone_name, dims)
+    zone = tecplot_dataset.add_ordered_zone(zone_name, dims, dtypes=dtypes, locations=locations)
 
     # Write XYZ values
     spacing = vtk_dataset.GetSpacing()
@@ -445,9 +655,10 @@ def add_image_data(vtk_dataset, tecplot_dataset):
 
     # Write the Point Data
     var_num = 3
+    name_counts = coordinate_name_counts(tecplot_dataset)
     for i in range(pd.GetNumberOfArrays()):
         arr = pd.GetArray(i)
-        type = arr.GetDataType()
+        vtk_type = arr.GetDataType()
         data = vtk.vtkDoubleArray()
         arr.GetData(0,arr.GetNumberOfTuples()-1,0,0,data)
         values = np.zeros(dims)
@@ -455,63 +666,75 @@ def add_image_data(vtk_dataset, tecplot_dataset):
         # VTI point data is not in the same IJK order as Tecplot, so we must
         # "roll" the values to reorder them.
         values = np.rollaxis(np.rollaxis(values,1), -1).ravel()
-        fd_type = field_data_type(type)
-        tecplot_dataset.add_variable(var_names[var_num], dtypes = [fd_type])
+        fd_type = field_data_type(vtk_type)
+        occurrence = name_counts.get(var_names[var_num], 0)
+        name_counts[var_names[var_num]] = occurrence + 1
+        variable = get_variable_by_occurrence(tecplot_dataset, var_names[var_num], occurrence)
+        if variable is None:
+            variable = add_variable(tecplot_dataset, var_names[var_num], fd_type,
+                                    ValueLocation.Nodal)
         if fd_type == FieldDataType.Float or fd_type == FieldDataType.Double:
-            zone.values(var_num)[:] = values
+            variable.values(zone)[:] = values
         elif fd_type == FieldDataType.Byte or fd_type == FieldDataType.Int16:
-            zone.values(var_num)[:] = values.astype(int)
+            variable.values(zone)[:] = values.astype(int)
         var_num += 1
 
     return zone
 
-def add_vtk_dataset(vtk_dataset, tecplot_dataset):
+def add_vtk_dataset(vtk_dataset, tecplot_dataset, zone_name=None):
+    if vtk_dataset is None:
+        return []
+    if is_composite_dataset(vtk_dataset):
+        return add_composite_dataset(vtk_dataset, tecplot_dataset, zone_name=zone_name)
+
+    if zone_name is None:
+        zone_name = DEFAULT_ZONE_NAME
+
     data_type = vtk_dataset.GetDataObjectType()
     if data_type in [vtk.VTK_UNSTRUCTURED_GRID, vtk.VTK_POLY_DATA]:
-        add_unstructured_grid(vtk_dataset, tecplot_dataset)
+        zone = add_unstructured_grid(vtk_dataset, tecplot_dataset, zone_name=zone_name)
     elif data_type == vtk.VTK_STRUCTURED_GRID:
-        add_structured_grid(vtk_dataset, tecplot_dataset)
+        zone = add_structured_grid(vtk_dataset, tecplot_dataset, zone_name=zone_name)
     elif data_type == vtk.VTK_IMAGE_DATA:
-        add_image_data(vtk_dataset, tecplot_dataset)
+        zone = add_image_data(vtk_dataset, tecplot_dataset, zone_name=zone_name)
     else:
         print("Unrecognized DataType: ", data_type)
+        return []
+
+    if zone:
+        return [zone]
+    return []
 
 def convert_vtk_file(vtk_file, plt_file, strand=None, solution_time=None):
-    reader = None
-    if vtk_file.endswith(".vtk"):
-        reader = vtk.vtkDataSetReader()
-    if vtk_file.endswith(".vtu"):
-        reader = vtk.vtkXMLUnstructuredGridReader()
-    elif vtk_file.endswith(".vtp"):
-        reader = vtk.vtkXMLPolyDataReader()
-    elif vtk_file.endswith(".vts"):
-        reader = vtk.vtkXMLStructuredGridReader()
-    elif vtk_file.endswith(".vti"):
-        reader = vtk.vtkXMLImageDataReader()
-    elif vtk_file.endswith(".pdb"):
-        reader = vtk.vtkPDBReader()
-    elif vtk_file.endswith(".vtkhdf") or vtk_file.endswith(".hdf"):
-        reader = vtk.vtkHDFReader()
-
+    reader = get_vtk_reader(vtk_file)
     reader.SetFileName(vtk_file)
+    reader.UpdateInformation()
+    time_steps = reader_time_steps(reader)
+    if solution_time is None and len(time_steps) == 1:
+        solution_time = time_steps[0]
     reader.Update()
-    vtk_dataset = reader.GetOutput()
+    vtk_dataset = reader.GetOutputDataObject(0)
     tp.new_layout()
     tecplot_dataset = tp.active_frame().dataset
-    add_vtk_dataset(vtk_dataset, tecplot_dataset)
+    created_zones = add_vtk_dataset(vtk_dataset, tecplot_dataset)
     if tecplot_dataset.num_zones == 0:
         print("No zones created.")
         return
+    if len(created_zones) == 1:
+        created_zones[0].name = os.path.basename(vtk_file)
+    else:
+        for z in created_zones:
+            if z.name == DEFAULT_ZONE_NAME:
+                z.name = os.path.basename(vtk_file)
     for z in tecplot_dataset.zones():
-        z.name = os.path.basename(vtk_file)
-        if strand and solution_time:
+        if strand is not None and solution_time is not None:
             z.strand = strand
             z.solution_time = solution_time
     tp.data.save_tecplot_plt(plt_file, dataset=tecplot_dataset)
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description="Convert VTK (.vtu, .vtp, .vts, .vti, , .vtkhdf, .pdb) files to Tecplot PLT format")
+    parser = argparse.ArgumentParser(description="Convert VTK/XDMF (.vtk, .vtu, .vtp, .vts, .vti, .vtkhdf, .hdf, .pdb, .xmf, .xdmf) files to Tecplot PLT format")
     parser.add_argument("infile", help="VTK file to convert")
     parser.add_argument("outfile", help="Name of Tecplot PLT (must end in .plt)")
     args = parser.parse_args()
