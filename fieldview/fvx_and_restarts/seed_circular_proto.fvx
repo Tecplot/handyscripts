@@ -1,0 +1,511 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+-- Create seed points for radial plane of seeds
+
+function make_radial_seed_plane(seed_radial_input_table)
+------------------------------------------------------------------
+--  Radial Seed Plane Input Table
+--   circular grid is centered around origin
+--
+--   { dataset = dataset_num            -- default is 1
+--     origin =                         -- plane centered here
+--              { x_center = number,
+--                y_center = number,
+--                z_center = number
+--              }
+--     normal_dir = 'X' | 'Y' | 'Z',
+--
+--     radius = { max_or_abs_minimum = number,  -- If no maximum,
+--                                              -- then abs_minimum == 0
+--                maximum            = number,
+--                count              = number   -- default is 8
+--              }
+--     theta  = { max_or_abs_minimum  = number, -- If no maximum,
+--                                              -- then abs_minimum == 0
+--                maximum             = number, -- if no max_or_abs_minimum,
+--                                              -- default is 360
+--                count               = number  -- default is 24
+--              }
+--   }
+--
+--  A table of ns seed locations is returned.  This table can
+--  be used directly in a FVX create_streamline cmd.
+--
+------------------------------------------------------------------
+--
+-- Define local variables
+
+   local sx = {}  sy = {}  sz = {}   -- seed coordinate values
+   local sc = {x=sx,y=sy,z=sz}       -- seed coordinate table
+   local rad_min, rad_max, rad_num
+   local theta_min, theta_max, theta_num
+   local xloc, yloc, zloc
+   local normal, ppos
+   local i,j                         -- local loop indeces
+   local error_code = 0
+
+   fv_script('PANELS OFF')           -- turn off for pprobe
+
+   -- Check origin specification ---------------------------------
+   if seed_radial_input_table.origin.x_center ~= nil then
+      xloc = seed_radial_input_table.origin.x_center
+   else
+      print('Error in specification of x-center for radial seed plane.')
+      error_code = 1
+      return sc, error_code
+   end
+   if seed_radial_input_table.origin.y_center ~= nil then
+      yloc = seed_radial_input_table.origin.y_center
+   else
+      print('Error in specification of y-center for radial seed plane.')
+      error_code = 1
+      return sc, error_code
+   end
+   if seed_radial_input_table.origin.z_center ~= nil then
+      zloc = seed_radial_input_table.origin.z_center
+   else
+      print('Error in specification of z-center for radial seed plane.')
+      error_code = 1
+      return sc, error_code
+   end
+
+   -- Check normal specification ---------------------------------
+   if seed_radial_input_table.normal_dir == 'X' then
+      normal = 1
+      ppos = seed_radial_input_table.origin.x_center
+   elseif seed_radial_input_table.normal_dir == 'Y' then
+      normal = 2
+      ppos = seed_radial_input_table.origin.y_center
+   elseif seed_radial_input_table.normal_dir == 'Z' then
+      normal = 3
+      ppos = seed_radial_input_table.origin.z_center
+   else
+      print("Expecting either 'X'|'Y'|'Z' for normal direction.")
+      error_code = 1
+      return sc, error_code
+   end
+
+   -- Check radial specifications ---------------------------------
+   if seed_radial_input_table.radius.count ~=nil then
+      rad_num = seed_radial_input_table.radius.count
+      if rad_num <= 1 then
+         print('Error in radial count specification.')
+         error_code = 1
+         return sc, error_code
+      end
+   else
+      print('Using radial count default = 8')
+      rad_num = 8    -- DEFAULT VALUE
+   end
+
+   if seed_radial_input_table.radius.maximum ~=nil then
+      -- there is an explicit definition for the minimum
+      rad_max = seed_radial_input_table.radius.maximum
+      if rad_max < 0 then
+         print('Error in radial maximum specification.')
+         error_code = 1
+         return sc, error_code
+      end
+      rad_min = seed_radial_input_table.radius.max_or_abs_minimum
+      if rad_min < 0 then
+         print('Error in radial minimum specification.')
+         error_code = 1
+         return sc, error_code
+      end
+   else
+      -- assign a minimum, (1/rad_num) x maximum
+      rad_max = seed_radial_input_table.radius.max_or_abs_minimum
+      if rad_max < 0 then
+         print('Error in radial maximum specification.')
+         error_code = 1
+         return sc, error_code
+      end
+      rad_min = 0.1*(1/rad_num)*rad_max
+      print('Using a minimum radius = ',rad_min)
+   end
+
+   -- Check theta specifications ---------------------------------
+   if seed_radial_input_table.theta.count ~=nil then
+      theta_num = seed_radial_input_table.theta.count
+      if theta_num < 0 then
+         print('Error in theta count specification.')
+         error_code = 1
+         return sc, error_code
+      end
+   else
+      print('Using theta count default = 24')
+      theta_num = 24   -- DEFAULT VALUE
+   end
+
+   if seed_radial_input_table.theta.maximum ~=nil then
+      -- there is an explicit definition for the minimum
+      theta_max = seed_radial_input_table.theta.maximum
+      if theta_max > 360 then
+         print('Error in theta maximum specification.')
+         error_code = 1
+         return sc, error_code
+      end
+      theta_min = seed_radial_input_table.theta.max_or_abs_minimum
+      if theta_min < -360 then
+         print('Error in theta minimum specification.')
+         error_code = 1
+         return sc, error_code
+      end
+   else
+      -- assign a minimum, default = 0
+      theta_min = 0
+      print('Using theta minimum default = 0')
+      theta_max = seed_radial_input_table.theta.max_or_abs_minimum
+      if theta_max < 0 then
+         print('Error in theta maximum specification.')
+         error_code = 1
+         return sc, error_code
+      end
+   end
+
+   -- Check for max seeds limit -------------------------------------
+   total_seeds = rad_num*theta_num + 1
+   if total_seeds > 2000 then
+      print('Maximum seeds (2000 per rake) is exceeded.')
+      print('Recommend smaller value(s) for radial or theta count.')
+      error_code = 1
+      return sc, error_code
+   end
+
+   -- Begin main calculation of streamline seed positions -----------
+   theta_span = theta_max - theta_min
+   if (abs(theta_span)==360) then
+      del_theta = theta_max/theta_num
+   else
+      del_theta = theta_span/(theta_num - 1)
+   end
+
+   ns = 1
+
+   for i=1,rad_num do
+     adeg = (rad_num - i)/rad_num
+     radius = rad_min + (rad_max - rad_min)*(1 - adeg^1.2)
+
+     for j=1,theta_num do
+        if (abs(theta_span)==360) then
+           theta = theta_min + j*del_theta
+        else
+           theta = theta_min + (j - 1)*del_theta
+        end
+
+        if normal == 1 then
+           sx[ns] = ppos
+           sy[ns] = radius*cos(theta) + yloc
+           sz[ns] = radius*sin(theta) + zloc
+        elseif normal == 2 then
+           sy[ns] = ppos
+           sx[ns] = radius*cos(theta) + xloc
+           sz[ns] = radius*sin(theta) + zloc
+        else
+           sz[ns] = ppos
+           sx[ns] = radius*cos(theta) + xloc
+           sy[ns] = radius*sin(theta) + yloc
+        end
+
+        ns = ns + 1
+     end
+   end
+
+   -- add final seed at center if appropriate -------------------
+   if ((rad_min/rad_max) < 0.1) then
+      sx[ns] = xloc
+      sy[ns] = yloc
+      sz[ns] = zloc
+   end
+
+   -- Check to make sure all seeds are in dataset ---------------
+   i=1
+   while sx[i] ~= nil do
+      test_probe = probe_current_functions({sx[i],sy[i],sz[i]})
+      if test_probe == nil then
+         error_code = 2
+         tremove(sx,i)
+         tremove(sy,i)
+         tremove(sz,i)
+      end
+      i = i + 1
+   end
+   if error_code == 2 then
+      print('Seeds lie outside the dataset.')
+   end
+
+   fv_script('PANELS ON')
+
+   return sc, error_code  -- return table of seed coordinates
+end
+
+------------------------------------------------------------------
+------------------------------------------------------------------
+--  These routines are used for the GUI implementation ONLY
+--
+------------------------------------------------------------------
+
+function set_defaults()
+
+   -- Initialize defaults for a basic streamline rake
+   x_center_def     = 0.0
+   y_center_def     = 0.0
+   z_center_def     = 0.0
+   plane_nrml_def   = 'X'
+   radius_def       = 1.0
+   theta_def        = 360
+   radius_count_def =  8
+   theta_count_def  = 24
+   current_rake     = 0
+
+   rake_ID         = {}  -- provide for a table of rakes
+
+end
+
+function return_ranges(line)
+   local text = {}
+   local number = {}
+   local line = line .. ","
+   status = 1
+   gsub(line, "([^,]*),",
+          function (num)
+             n = tonumber(num)
+             if n then
+               tinsert(%number, n)
+             else
+               --status = nil
+               tinsert(%text, num)
+             end
+          end
+       )
+   return number,status
+end
+
+function Create_Rake()
+
+   -- probe for needed vector function
+   vector_funcs = get_vector_functions(1)
+   if vector_funcs == nil then
+      no_vec = 1
+   else
+      no_vec = 0
+   end
+
+   current_rake = current_rake + 1
+
+   -- Check Inputs to the streamline creation
+   if x_center == nil then x_center = x_center_def end
+   if y_center == nil then y_center = y_center_def end
+   if z_center == nil then z_center = z_center_def end
+
+   if plane_nrml == nil then plane_nrml = plane_nrml_def end
+
+   -- Check Radius Settings
+   if radius_A == nil then
+      radius_A = radius_def
+   end
+
+   if radius_count == nil then radius_count = radius_count_def end
+
+   -- Check Theta Settings
+   if theta_A == nil then
+      theta_A = theta_def
+   end
+
+   if theta_count == nil then theta_count = theta_count_def end
+
+   -- Check that *safe* GUI settings are passed to make_circular_seed_plane
+
+   seed_circ_parameters = { dataset = 1,
+                            origin = { x_center =  x_center,
+                                       y_center =  y_center,
+                                       z_center =  z_center
+                                     },
+                            normal_dir = plane_nrml,
+                            radius  = { max_or_abs_minimum = radius_A,
+                                        maximum            = radius_B,
+                                        count              = radius_count,
+                                      },
+                            theta =   { max_or_abs_minimum = theta_A,
+                                        maximum            = theta_B,
+                                        count              = theta_count
+                                      },
+                          }
+
+   -- NOTE: Do more complete checking within function
+
+   my_sc, err_code = make_radial_seed_plane(seed_circ_parameters)
+
+   if (err_code ~= 1) and (no_vec == 0) then
+
+      rake_ID[current_rake] =
+               create_streamline({
+                    seeds = my_sc,
+                    visibility     = 'on',
+                    display_seeds  = 'on',
+                    vector_func    = vector_funcs[1],
+                    --
+                    calculation_parameters = {
+                             step = 9,
+                             direction = 'forward',
+                                            }
+                                })
+
+      set_streamlines_display({display_type='complete'})
+   else
+     if no_vec == 1 then
+        print('Invalid Rake Parameters or No Vector Function available.')
+     end
+   end
+
+end
+
+function Delete_Rake()
+
+  -- Delete the current rake
+  if current_rake >= 1 then
+     delete(rake_ID[current_rake])
+     current_rake = current_rake - 1
+  end
+end
+
+function create_circular_rake()
+
+  radius_params = {}  theta_params = {}
+
+  GUI_setup = { title = 'Circular Seed Distribution',
+                xloc = 50, yloc = 400;
+                { type   = 'text',
+                  title  = 'X-center      ',
+                  action = function(self)
+                             x_center = self:get()
+                             self:set(format('%16.4f', x_center))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Y-center      ',
+                  action = function(self)
+                             y_center = self:get()
+                             self:set(format('%16.4f', y_center))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Z-center      ',
+                  action = function(self)
+                             z_center = self:get()
+                             self:set(format('%16.4f', z_center))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Set Normal X | Y | Z',
+                  action = function(self)
+                             plane_nrml = self:get()
+                             plane_nrml=gsub(plane_nrml," ","")
+                             self:set('       '..plane_nrml)
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Radius [, Range]  ',
+                  action = function(self)
+                             radius_line = self:get()
+                             radius_params, err_code = return_ranges(radius_line)
+                             if radius_params[1] ~= nil then
+                                 radius_A = radius_params[1]
+                             end
+                             if radius_params[2] ~= nil then
+                                 radius_B = radius_params[2]
+                                 fmt_str = '%10.4f,  %10.4f'
+                                 self:set(format(fmt_str,radius_A,radius_B))
+                             else
+                                 fmt_str = '%10.4f'
+                                 self:set(format(fmt_str,radius_A))
+                                 radius_B = nil
+                             end
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Theta [, Range]    ',
+                  action = function(self)
+                             theta_line = self:get()
+                             theta_params, err_code = return_ranges(theta_line)
+                             if theta_params[1] ~= nil then
+                                 theta_A = theta_params[1]
+                             end
+                             if theta_params[2] ~= nil then
+                                 theta_B = theta_params[2]
+                                 fmt_str = '%10.1f,  %10.1f'
+                                 self:set(format(fmt_str,theta_A,theta_B))
+                             else
+                                 fmt_str = '%10.1f'
+                                 self:set(format(fmt_str,theta_A))
+                                 theta_B = nil
+                             end
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Radius Count',
+                  action = function(self)
+                             radius_count = self:get()
+                             self:set(format('%12.0f', radius_count))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Theta Count  ',
+                  action = function(self)
+                             theta_count = self:get()
+                             self:set(format('%12.0f', theta_count))
+                           end,
+                },
+                { type   = 'button',
+                  title  = 'Create Streamline Rake',
+                  action = function()
+                             Create_Rake()
+                           end,
+                },
+                { type   = 'button',
+                  title  = 'Delete Streamline Rake',
+                  action = function()
+                             Delete_Rake()
+                           end,
+                }
+              }
+
+  circular_rake_GUI = make_panel(GUI_setup)
+
+  set_defaults()
+
+  -- Apply defaults to GUI
+  circular_rake_GUI[1]:set(format('%16.4f', x_center_def))
+  circular_rake_GUI[2]:set(format('%16.4f', y_center_def))
+  circular_rake_GUI[3]:set(format('%16.4f', z_center_def))
+
+  circular_rake_GUI[4]:set('       '..plane_nrml_def)
+
+  circular_rake_GUI[5]:set(format('%16.4f', radius_def))
+  circular_rake_GUI[6]:set(format('%16.1f', theta_def))
+  circular_rake_GUI[7]:set(format('%12.0f', radius_count_def))
+  circular_rake_GUI[8]:set(format('%12.0f', theta_count_def))
+
+  -- Force defaults onto globals
+  x_center     = x_center_def
+  y_center     = y_center_def
+  z_center     = z_center_def
+  plane_nrml   = plane_nrml_def
+  radius_A     = radius_def
+  radius_B     = nil
+  theta_A      = theta_def
+  theta_B      = nil
+  radius_count = radius_count_def
+  theta_count  = theta_count_def
+
+end
+
+
+

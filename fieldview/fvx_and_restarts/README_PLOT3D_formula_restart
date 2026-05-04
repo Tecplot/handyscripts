@@ -1,0 +1,51 @@
+  The intent of this formula restart is to provide the user
+with the ability to calculate all of the PLOT3D equations for
+a FIELDVIEW compliant unstructured dataset.  Most notably, this
+implies that the constants, Alpha and FSMach, are defined
+correctly within the FIELDVIEW unstructured file.
+
+  The formula restart, PLOT3D_eqns.frm, is subject to the
+following constraints:
+
+1) The following 5 variables must be defined for the data file,
+   using exactly the syntax given below:
+
+   Density (Q1)
+   x-momentum (Q2)
+   y-momentum (Q3)
+   z-momentum (Q4)
+   Stag. energy (Q5)
+
+   For example, if your dataset has density defined as "ro",
+   you will need to create a formula using the function calculator
+   which assigns "ro" to the formula name "Density (Q1)"
+
+   NOTE:  The definition of these variables must be done BEFORE
+   the PLOT3D_eqns.frm is read into FIELDVIEW.
+
+2) The 5 above variables must be non-dimensionalized using the
+   PLOT3D convention.
+
+3) There are two variables, Alpha and FSMach, which are assumed
+   to be correctly defined within the FIELDVIEW unstructured file.
+   The variable, Alpha, refers to the Angle of Attack and is expected
+   to be specified in units of [radians].  The variable FSMach refers
+   to the Free Stream Mach condition, and its units should follow the
+   PLOT3D convention.
+
+   NOTE:  If these variables have not been correctly defined, then
+   the function calculator can be used to override these constants,
+   by using the matching function formula names.
+
+4) GAMMA is hardcoded to 1.4 in the equations.
+
+5) In the PLOT3D non-dimensionalization, the ideal gas constant (RGAS)
+   is identically equal to 1.0.  To save space, the variable RGAS
+   does not appear in any of the equations.
+
+6) The command line parameters, -gamma (value) and -gasconstant (value)
+   will have no effect on this formula restart.
+
+7) The equations created using this formula restart will have the
+   string [PLOT3D} appended to the variable name to signify that these
+   formulas have been calculated following the PLOT3D conventions.

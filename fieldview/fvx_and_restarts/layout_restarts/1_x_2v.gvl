@@ -1,0 +1,32 @@
+layout_restart_version: 1
+num_panes: 3
+width: 800
+height: 800
+separator_width: 4
+pane_gfx_offset: 2
+current_pane_id: "1.1"
+index: 0
+type: splitter
+orientation: Horizontal
+count: 2
+sizes: 399.399
+index: 0
+type: pane
+id: "0"
+name: "1"
+rect: 0, 0, 399, 800
+index: 1
+type: splitter
+orientation: Vertical
+count: 2
+sizes: 399.399
+index: 0
+type: pane
+id: "1.0"
+name: "2"
+rect: 401, 0, 399, 399
+index: 1
+type: pane
+id: "1.1"
+name: "3"
+rect: 401, 401, 399, 399

@@ -1,0 +1,372 @@
+--------------------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                                          --
+--  All rights reserved.                                                      --
+--                                                                            --
+--  This sample FVX script is not supported by Tecplot, Inc.                  --
+--  and Tecplot, Inc. provides no warranties or assurances                    --
+--  about its fitness or merchantability.  It is provided at no               --
+--  cost and is for demonstration purposes only.                              --
+--------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+-- SET_VIEW: FIELDVIEW Extension Language Function (FVX)
+--
+--DESCRIPTION:
+--This function is designed for use in FVX scripts to create a
+--predetermined view in FIELDVIEW.  The function requires input/default
+--settings for each field described in a view restart file.  A view
+--restart file is written, executed, and destroyed based on these data.
+--A table of determined settings is saved as a global value such that
+--unchanged settings remain functional from use to use.
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+--Begin function definition with the function declaration as per
+--FVX syntactic requirements
+-----------------------------------------------------------------------
+
+function set_view(arg)
+
+	-------------------------------------------
+	--Open temporary .vct file in write mode
+	-------------------------------------------
+
+	file_handle = openfile("tempview.vct","w+")
+
+	-------------------------------------------
+	--Define space and .vct version number
+	-------------------------------------------
+
+	space = " "
+	version = "trans_restart_version: 10"
+
+	-------------------------------------------
+	--Set choices for the following view fields
+	-------------------------------------------
+
+--DATASET INFO TABLE
+
+	if arg.dataset_info_table ~=nil	then		--dataset_info_table is provided
+		dataset_info_table = arg.dataset_info_table
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		dataset_info_table = set_view_table335039.table_dataset_info_table
+
+	else
+		print("ERROR: dataset_info_table must be provided")
+		return
+	end
+
+--ZOOM
+
+	if arg.zoom ~= nil then				--zoom is provided
+		zoom = arg.zoom
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		zoom = set_view_table335039.table_zoom
+
+	else
+		zoom = 1.000000				--default setting is 1
+	end
+
+--ANGLE AXIS
+
+	if arg.angle_axis ~= nil then			--angle_axis is provided
+		at = arg.angle_axis.at
+		from = arg.angle_axis.from
+
+		if arg.angle_axis.up ~= nil then	--up is provided
+			up = arg.angle_axis.up
+		else
+			up = {0, 1, 0}			--default for up
+		end					--is (0, 1, 0)
+		angle = 0
+		axis = {0, 0, 0}
+
+		--call conversion function
+		angle = lua_LookAtFromToAngleAxis(at, from, up, angle, axis)
+
+		angle_axis1 = angle
+		angle_axis2 = axis[1]
+		angle_axis3 = axis[2]
+		angle_axis4 = axis[3]
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		angle_axis1 = set_view_table335039.table_angle_axis1
+		angle_axis2 = set_view_table335039.table_angle_axis2
+		angle_axis3 = set_view_table335039.table_angle_axis3
+		angle_axis4 = set_view_table335039.table_angle_axis4
+
+	else
+		print("ERROR: angle_axis must be provided")
+		return
+	end
+
+--TRANSLATION
+
+	if arg.translation ~= nil then			--translation is provided
+		translation1 = arg.translation.x
+		translation2 = arg.translation.y
+		translation3 = arg.translation.z
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		translation1 = set_view_table335039.table_translation1
+		translation2 = set_view_table335039.table_translation2
+		translation3 = set_view_table335039.table_translation3
+
+	else
+		print("ERROR: translation must be provided")
+		return
+	end
+
+--SCALE
+
+	if set_view_table335039 ~= nil then		--previous setting is available
+		scale = set_view_table335039.table_scale
+
+	elseif dataset_info_table.cylindrical == "no" then
+		xrange = abs(dataset_info_table.xmax - dataset_info_table.xmin)
+		yrange = abs(dataset_info_table.ymax - dataset_info_table.ymin)
+		zrange = abs(dataset_info_table.zmax - dataset_info_table.zmin)
+		scale = max(xrange, yrange, zrange)
+
+	elseif dataset_info_table.cylindrical == "yes" then
+		rrange = abs(dataset_info_table.rmax - dataset_info_table.rmin)
+		zrange = abs(dataset_info_table.zmax - dataset_info_table.zmin)
+		scale = max(rrange, zrange)
+
+	else
+		print("ERROR: dataset_info_table cannot be read")
+		return
+	end
+
+--OUTLINE
+
+	if arg.outline ~= nil then			--outline is provided
+		if arg.outline == "on" then
+			outline = 2
+
+		elseif arg.outline == "off" then
+			outline = 0
+
+		else
+			print("ERROR: Input for OUTLINE cannot be read")
+			return
+		end
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		outline = set_view_table335039.table_outline
+
+	else
+		outline = 2				--default setting is on
+	end
+
+--PERSPECTIVE/PERSPECTIVE ANGLE/PERSPECTIVE Z
+
+	if arg.perspective ~= nil then			--perspective is desired
+		if arg.perspective.angle == nil then	--no input for angle
+			if set_view_table335039 ~= nil then	--previous setting is available
+				perspective_angle = set_view_table335039.table_perspective_angle
+				perspective_z = set_view_table335039.table_perspective_z
+				perspective = set_view_table335039.table_perspective
+			else
+				perspective_angle = 40
+				perspective_z = -2.75
+				perspective = 1		--perspective is on
+			end
+		else					--perspective is provided
+			perspective_angle = arg.perspective.angle
+			perspective_z = arg.perspective.z
+			perspective = 1			--perspective is on
+		end
+	else						--no input for perspective
+		perspective_angle = 40
+		perspective_z = -2.75
+		perspective = 0				--perspective is off
+	end
+
+--AXIS MARKERS
+
+	if arg.axis_markers ~= nil then			--axis_markers is provided
+		if arg.axis_markers == "on" then
+			axis_markers = 1
+
+		elseif arg.axis_markers == "off" then
+			axis_markers = 0
+
+		else
+			print("ERROR: Input for AXIS MARKERS cannot be read")
+			return
+		end
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		axis_markers = set_view_table335039.table_axis_markers
+
+	else
+		axis_markers = 1			--default setting is on
+	end
+
+--MOUSE MODE
+
+	if arg.mouse_mode ~= nil then			--mouse_mode is provided
+		if arg.mouse_mode == "track" then
+			mouse_mode = 1
+
+		elseif arg.mouse_mode == "running" then
+			mouse_mode = 2
+
+		else
+			print("ERROR: Input for MOUSE MODE cannot be read")
+			return
+		end
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		mouse_mode = set_view_table335039.table_mouse_mode
+
+	else
+		mouse_mode = 1				--default setting is "track"
+	end
+
+--LIGHT DIRECTION
+
+	if arg.light_direction ~= nil then		--light_direction is provided
+		x_light = arg.light_direction.x_light
+		y_light = arg.light_direction.y_light
+		z_light = arg.light_direction.z_light
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		x_light = set_view_table335039.table_x_light
+		y_light = set_view_table335039.table_y_light
+		z_light = set_view_table335039.table_z_light
+
+	else
+		x_light = 0.577350			--default setting is the point
+		y_light = 0.577350			--(0.577350, 0.577350, 0.577350)
+		z_light = 0.577350
+	end
+
+--ROTATION CENTER/ROTATION CENTER ON
+
+	if arg.rotation_center ~= nil then		--rotation_center is desired
+		if arg.rotation_center.x_rot == nil then	--no input for x_rot
+			if set_view_table335039 ~= nil then	--previous setting is available
+				x_rot = set_view_table335039.table_x_rot
+				y_rot = set_view_table335039.table_y_rot
+				z_rot = set_view_table335039.table_z_rot
+				rotation_center_on = set_view_table335039.table_rotation_center_on
+			else
+				x_rot =	0.000000
+				y_rot = 0.000000
+				z_rot = 0.000000
+				rotation_center_on = 1	--rotation_center_on is on
+			end
+		else					--rotation_center is provided
+			x_rot = arg.rotation_center.x_rot
+			y_rot = arg.rotation_center.y_rot
+			z_rot = arg.rotation_center.z_rot
+			rotation_center_on = 1		--rotation_center_on is on
+		end
+	else						--no input for rotation_center
+		x_rot =	0.000000			--default setting is origin
+		y_rot = 0.000000
+		z_rot = 0.000000
+		rotation_center_on = 0			--rotation_center_on is off
+	end
+
+--QUICK TRANSPARENCY
+
+	if arg.quick_transparency ~= nil then		--quick_transparency is provided
+		if arg.quick_transparency == "on" then
+			quick_transparency = 1
+
+		elseif arg.quick_transparency == "off" then
+			quick_transparency = 0
+
+		else
+			print("ERROR: Input for QUICK TRANSPARENCY cannot be read")
+			return
+		end
+
+	elseif set_view_table335039 ~= nil then		--previous setting is available
+		quick_transparency = set_view_table335039.table_quick_transparency
+
+	else
+		quick_transparency = 0			--default setting is off
+	end
+------------------------------------------------------------------------
+
+	-----------------------------------------
+	--Write .vct restart file "tempview.vct"
+	-----------------------------------------
+
+	write(file_handle, version)
+	write(file_handle, "\nzoom: ", zoom)
+	write(file_handle, "\nangle_axis: ", angle_axis1, space, angle_axis2, space, angle_axis3, space, angle_axis4)
+	write(file_handle, "\ntranslation: ", translation1, space, translation2, space, translation3)
+	write(file_handle, "\nscale: ", scale)
+	write(file_handle, "\noutline: ", outline)
+	write(file_handle, "\nperspective: ", perspective)
+	write(file_handle, "\nperspective_angle: ", perspective_angle)
+	write(file_handle, "\nperspective_z: ", perspective_z)
+	write(file_handle, "\naxis_markers: ", axis_markers)
+	write(file_handle, "\nmouse_mode: ", mouse_mode)
+	write(file_handle, "\nlight_direction: ", x_light, space, y_light, space, z_light)
+	write(file_handle, "\nrotation_center_on: ", rotation_center_on)
+	write(file_handle, "\nrotation_center: ", x_rot, space, y_rot, space, z_rot)
+	write(file_handle, "\nquick_transparency: ", quick_transparency)
+
+	closefile(file_handle)
+
+	-----------------------------------------
+	--Call View Restart "tempview.vct"
+	-----------------------------------------
+
+	fv_script("RESTART VIEW tempview.vct")
+
+	-----------------------------------------
+	--Save view choices in global table
+	-----------------------------------------
+
+	set_view_table335039 = {
+		table_dataset_info_table = dataset_info_table,
+		table_zoom = zoom,
+		table_angle_axis1 = angle_axis1,
+		table_angle_axis2 = angle_axis2,
+		table_angle_axis3 = angle_axis3,
+		table_angle_axis4 = angle_axis4,
+		table_translation1 = translation1,
+		table_translation2 = translation2,
+		table_translation3 = translation3,
+		table_scale = scale,
+		table_outline = outline,
+		table_perspective = perspective,
+		table_perspective_angle = perspective_angle,
+		table_perspective_z = perspective_z,
+		table_axis_markers = axis_markers,
+		table_mouse_mode = mouse_mode,
+		table_x_light = x_light,
+		table_y_light = y_light,
+		table_z_light = z_light,
+		table_rotation_center_on = rotation_center_on,
+		table_x_rot = x_rot,
+		table_y_rot = y_rot,
+		table_z_rot = z_rot,
+		table_quick_transparency = quick_transparency,
+	}
+
+	-----------------------------------------
+	--Delete temporary view restart file
+	-----------------------------------------
+
+	remove("tempview.vct")
+
+	-----------------------------------------
+	--Return global table of view choices
+	-----------------------------------------
+
+	return set_view_table335039
+
+-----------------------------------------------------------------------
+--End function definition as per FVX syntactic requirements.
+-----------------------------------------------------------------------
+end

@@ -1,0 +1,170 @@
+--------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+-- Description
+--   Perform a rudimentary volume integral
+--   Expectation is that a dataset has already been read into FV
+
+dofile('basic_volume_integral.fvx')
+
+------------------------------------------------------------------
+-- function vol_integral(vol_integral_table)
+------------------------------------------------------------------
+-- vol_integral_table
+--   { dataset = dataset_num,   -- default is 1
+--
+--     normal_dir = 'X' | 'Y' | 'Z',
+--
+--     range = { minimum   = number,  -- default = 0
+--               maximum   = number
+--             }
+--
+--     steps = number,          -- no. of slices to use
+--                              -- default is 64
+--
+--     scalar_func = function_name,
+--
+--     threshold_func = function_name,
+--
+--     threshold_range = { min = number,
+--                         max = number }
+--
+--     quadrature_method = 'Trapezoid' | 'Simpson'
+--   }
+--
+--  The volume integral is returned
+--
+------------------------------------------------------------------
+--
+--  Example outline
+--   Step 1:  Read in the Feature Extraction tutorial dataset
+--              recirc.uns
+--
+--   Step 2:  Calculate the volume of the falling sphere in
+--             this tutorial. To do this, calculate the simple
+--             volume by not specifying a scalar function.
+--             Use the threshold function to limit to the sphere
+--             volume.
+
+result = vol_integral({
+
+               dataset = 1,
+
+               normal_dir = 'Z',
+
+               range = { min = -7,
+                         max = 7 },
+
+               steps = 22,
+
+               threshold_func = 'Rsphere: (X^2+Y^2+Z^2)^.5',
+
+               threshold_range = { min = 0,
+                                   max = 6.98282 },
+              })
+
+-- The actual answer is:    1426.20236
+-- The returned volume is:  1414.77824
+--
+--
+--   Step 3: Repeat the calculation above, using Simpsons
+--            rule instead of the default Trapezoid Rule
+--
+result = vol_integral({
+
+               dataset = 1,
+
+               normal_dir = 'Z',
+
+               range = { min = -7,
+                         max = 7 },
+
+               steps = 122,
+
+               threshold_func = 'Rsphere: (X^2+Y^2+Z^2)^.5',
+
+               threshold_range = { min = 0,
+                                   max = 6.98282 },
+
+               quadrature_method = 'Simpson'
+              })
+--
+-- The actual answer is:    1426.20236
+-- The returned volume is:  1417.21119
+--
+--
+--   Step 4: Specify a scalar function, and integrate this
+--            scalar over the volume.
+
+result = vol_integral({
+
+               dataset = 1,
+
+               normal_dir = 'Z',
+
+               range = { min = -7,
+                         max = 7 },
+
+               scalar_func = 'w-velocity',
+
+               threshold_func = 'Rsphere: (X^2+Y^2+Z^2)^.5',
+
+               threshold_range = { min = 0,
+                                   max = 6.98282 },
+
+               quadrature_method = 'Simpson'
+              })
+--
+-- The returned volume is:    0.8434252752097
+--
+--
+--   Step 5: Calculate a simple volume, without using the
+--            sphere threshold.  The domain is cylindrical,
+--            and without a threshold, we will integrate to
+--            the model domain boundaries.
+
+result = vol_integral({
+
+               dataset = 1,
+
+               normal_dir = 'Z',
+
+               range = { min = -7,
+                         max = 7 },
+
+               quadrature_method = 'Trapezoid'
+
+              })
+--
+-- The actual answer is:    35185.90926
+-- The returned volume is:  35085.43554
+--
+--
+--   Step 6: Specify a scalar function, pressure, and integrate
+--            this over the full model domain.
+--
+
+result = vol_integral({
+
+               dataset = 1,
+
+               normal_dir = 'Z',
+
+               range = { min = -7,
+                         max = 7 },
+
+               scalar_func = 'pressure',
+
+               quadrature_method = 'Trapezoid'
+              })
+--
+-- The returned volume is:  -1.38019735239
+--
+--

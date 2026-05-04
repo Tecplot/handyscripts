@@ -1,0 +1,77 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                                      --
+--                                                                            --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+--  about its fitness or merchantability.  It is provided at no               --
+--  cost and is for demonstration purposes only.                              --
+--                                                              --
+-- Purpose: example use of set_view.fvx                         --
+--                                                              --
+------------------------------------------------------------------
+
+dofile(FV_HOME .. "/fvx_and_restarts/set_view.fvx")
+
+data_input_table = {
+	data_format	=	"plot3d",
+	input_parameters= {
+      auto_detect = "on",
+      xyz_file = {name = FV_HOME .. "/examples/f18/f18i9b_g_bin"},
+      q_file   = {name = FV_HOME .. "/examples/f18/f18i9b_q_bin"},
+		},
+}
+
+data_table = read_dataset(data_input_table)
+
+boundary_tableA = {
+	dataset	=	1,
+	types	= {
+		"body","wing","tail",
+	},
+	display_type = "smooth_shading",
+}
+boundA = create_boundary(boundary_tableA)
+
+set_view_table1 = {
+	dataset_info_table = data_table,
+	zoom = 7,
+	angle_axis = {
+		at = {4,20,8},
+		from = {0,3,0},
+	},
+	translation = {
+		x = 0,
+		y = 0,
+		z = 0,
+		},
+	outline = "off",
+	perspective = {},
+	rotation_center = {
+		x_rot = 1,
+		y_rot = 1,
+		z_rot = 1
+	},
+	quick_transparency = "on"
+}
+
+print("\nInitial View - Dismiss PopUp to use execute set_view(set_view_table1)")
+fv_script("PAUSE")
+
+set_view(set_view_table1)
+
+print("\nDismiss PopUp to use execute set_view(set_view_table2)")
+fv_script("PAUSE")
+
+set_view_table2 = {
+	zoom = 5,
+	angle_axis = {
+		from = {0, 0, 0},
+		at = {1, 1, 1},
+	},
+	perspective = {},
+	rotation_center = {}
+}
+set_view(set_view_table2)
+
+print("\nExample script has completed.")

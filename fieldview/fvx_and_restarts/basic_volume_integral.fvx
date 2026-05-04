@@ -1,0 +1,223 @@
+--------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+-- Description
+--   Perform a simple volume integral
+------------------------------------------------------------------
+function vol_integral(vol_integral_table)
+------------------------------------------------------------------
+-- vol_integral_table
+--   { dataset = dataset_num,   -- default is 1
+--
+--     normal_dir = 'X' | 'Y' | 'Z',
+--
+--     range = { min   = number,
+--               max   = number
+--             }
+--
+--     steps = number,          -- no. of slices to use
+--                              -- default is 64
+--
+--     scalar_func = function_name,
+--
+--     threshold_func = function_name,
+--
+--     threshold_range = { min = number,
+--                         max = number }
+--
+--     quadrature_method = 'Trapezoid' | 'Simpson'
+--   }
+--
+--  The volume integral is returned
+--
+------------------------------------------------------------------
+   local i, steps
+   local sum_vol, int_volume
+   local min_xtent, max_xtent, d_ext
+
+
+   if vol_integral_table.normal_dir == 'X' then
+     working_coord = create_coord({axis='X',
+                                   visibility='off',
+                                   dataset = vol_integral_table.dataset})
+     qwc = query(working_coord)
+     if vol_integral_table.range.min < qwc.X_axis.abs_min then
+        vol_integral_table.range.min = qwc.X_axis.abs_min
+     end
+     if vol_integral_table.range.max > qwc.X_axis.abs_max then
+        vol_integral_table.range.max = qwc.X_axis.abs_max
+     end
+   else
+      if vol_integral_table.normal_dir == 'Y' then
+         working_coord = create_coord({axis='Y',
+                                       visibility='off',
+                                       dataset = vol_integral_table.dataset})
+         qwc = query(working_coord)
+         if vol_integral_table.range.min < qwc.Y_axis.abs_min then
+           vol_integral_table.range.min = qwc.Y_axis.abs_min
+         end
+         if vol_integral_table.range.max > qwc.Y_axis.abs_max then
+           vol_integral_table.range.max = qwc.Y_axis.abs_max
+         end
+      else
+         if vol_integral_table.normal_dir == 'Z' then
+            working_coord = create_coord({axis='Z',
+                                          visibility='off',
+                                          dataset = vol_integral_table.dataset})
+            qwc = query(working_coord)
+            if vol_integral_table.range.min < qwc.Z_axis.abs_min then
+              vol_integral_table.range.min = qwc.Z_axis.abs_min
+            end
+            if vol_integral_table.range.max > qwc.Z_axis.abs_max then
+              vol_integral_table.range.max = qwc.Z_axis.abs_max
+            end
+         else
+            print("Choices for normal dir are 'X' | 'Y' | 'Z' \n")
+            error_code = 1
+            int_volume = -9999.9999
+            return int_volume, err_code
+         end
+      end
+   end
+
+   list_functions = get_scalar_functions(vol_integral_table.dataset)
+
+   if vol_integral_table.scalar_func == nil then
+      check_scalar = nil
+   else
+      check_scalar = match_one_entry(list_functions,
+                                     vol_integral_table.scalar_func)
+   end
+
+   if check_scalar == nil then
+      print('\nCalculating simple Volume Integral')
+   else
+      print('\nCalculating Volume Integral for function '..check_scalar)
+      modify(working_coord,{scalar_func = vol_integral_table.scalar_func})
+   end
+
+   if vol_integral_table.threshold_func ~= nil then
+      check_thresh = match_one_entry(list_functions,
+                                     vol_integral_table.threshold_func)
+      if check_thresh == nil then
+         print('Threshold Function not found in dataset.\n')
+         error_code = 1
+         int_volume = -9999.9999
+         return int_volume, error_code
+      else
+         modify(working_coord,{threshold_func = vol_integral_table.threshold_func})
+         qwc = query(working_coord)
+         if vol_integral_table.threshold_range.max < qwc.threshold_range.abs_max then
+            modify(working_coord,{threshold_range={max=vol_integral_table.threshold_range.max}})
+         end
+         if vol_integral_table.threshold_range.min > qwc.threshold_range.abs_min then
+            modify(working_coord,{threshold_range={min=vol_integral_table.threshold_range.min}})
+         end
+      end
+   end
+
+   modify(working_coord,{visibility = 'on'})
+
+   min_xtent = vol_integral_table.range.min
+   max_xtent = vol_integral_table.range.max
+
+   if vol_integral_table.steps == nil then
+      steps = 64
+   else
+      steps = vol_integral_table.steps
+      if mod(steps,2) == 1 then steps = steps + 1 end
+   end
+
+   d_ext = (max_xtent - min_xtent)/steps
+
+   slice = {}
+
+   for i=1,steps do
+     --
+     if vol_integral_table.normal_dir == 'X' then
+        modify(working_coord,{X_axis = {current = min_xtent + (i-1)*d_ext}})
+     else
+        if vol_integral_table.normal_dir == 'Y' then
+           modify(working_coord,{Y_axis = {current = min_xtent + (i-1)*d_ext}})
+        else
+           modify(working_coord,{Z_axis = {current = min_xtent + (i-1)*d_ext}})
+        end
+     end
+     --
+     if check_scalar == nil then
+        slice[i] = integrate_surface(working_coord).area
+     else
+        slice[i] = integrate_surface(working_coord).sum
+     end
+   end
+   --
+   if vol_integral_table.normal_dir == 'X' then
+      modify(working_coord,{X_axis = {current = max_xtent }})
+   else
+      if vol_integral_table.normal_dir == 'Y' then
+         modify(working_coord,{Y_axis = {current = max_xtent }})
+      else
+         modify(working_coord,{Z_axis = {current = max_xtent }})
+      end
+   end
+
+   if check_scalar == nil then
+      slice[steps+1] = integrate_surface(working_coord).area
+   else
+      slice[steps+1] = integrate_surface(working_coord).sum
+   end
+
+   if vol_integral_table.quadrature_method == 'Simpson' then
+      -- Simpson's Rule --
+      --
+      sum_vol = 0
+
+      for i=1,steps do
+         if i==1 then
+            sum_vol = sum_vol + slice[i]
+         else
+            if mod(i,2)==0 then
+               sum_vol = sum_vol + 4*slice[i]
+            else
+               sum_vol = sum_vol + 2*slice[i]
+            end
+         end
+      end
+      sum_vol = sum_vol + slice[steps+1]
+
+      int_volume = sum_vol*d_ext/3
+
+      print('Volume Integral [Simpsons Rule] : ',int_volume,'\n')
+
+   else
+      -- Trapezoid Rule --
+      --
+      sum_vol = 0
+
+      for i=1,steps do
+         if i==1 then
+            sum_vol = sum_vol + slice[i]
+         else
+            sum_vol = sum_vol + 2*slice[i]
+         end
+      end
+      sum_vol = sum_vol + slice[steps+1]
+
+      int_volume = sum_vol*d_ext/2
+
+      print('Volume Integral [Trapezoid Rule] : ',int_volume,'\n')
+   end
+--
+---------------------------------------------------------------
+   delete(working_coord)
+
+   return int_volume
+
+end

@@ -1,0 +1,45 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+
+dofile('seed_circular_proto.fvx')
+
+--function make_rectangle_seed_plane(seed_rectangle_input_table)
+------------------------------------------------------------------
+--  Radial Seed Plane Input Table
+--   circular grid is centered around origin
+--
+--   { dataset = dataset_num            -- default is 1
+--     origin =                         -- plane centered here
+--              { x_center = number,
+--                y_center = number,
+--                z_center = number
+--              }
+--     normal_dir = 'X' | 'Y' | 'Z',
+--
+--     radius = { max_or_abs_minimum = number,  -- If no maximum,
+--                                              -- then abs_minimum == 0
+--                maximum            = number,
+--                count              = number   -- default is 8
+--              }
+--     theta  = { max_or_abs_minimum  = number, -- If no maximum,
+--                                              -- then abs_minimum == 0
+--                maximum             = number, -- if no max_or_abs_minimum,
+--                                              -- default is 360
+--                count               = number  -- default is 24
+--              }
+--   }
+--
+--  A table of ns seed locations is returned.  This table can
+--  be used directly in a FVX create_streamline cmd.
+--
+------------------------------------------------------------------
+
+create_circular_rake()

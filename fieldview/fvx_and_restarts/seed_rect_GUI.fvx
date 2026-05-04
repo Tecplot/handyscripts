@@ -1,0 +1,48 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+
+dofile('seed_rectangle_proto.fvx')
+
+--function make_rectangle_seed_plane(seed_rectangle_input_table)
+------------------------------------------------------------------
+--  Rectangular Seed Plane Input Table
+--   rectangular grid is centered around origin
+--
+--   { dataset = dataset_num            -- default is 1
+--     origin =                         -- location of rect center
+--              { x_location = number,
+--                y_location = number,
+--                z_location = number
+--              }
+--     normal_dir = 'X' | 'Y' | 'Z',
+--       --   'X' sets width = 'Y', height = 'Z'
+--       --   'Y' sets width = 'X', height = 'Z'
+--       --   'Z' sets width = 'X', height = 'Y'
+--
+--     width = { abs_min_or_delta = number,  -- delta if no max, absolute
+--                                           -- minimum if max specified
+--               abs_max          = number,
+--               count            = number   -- OPTIONAL default is 12
+--             }
+--     height = { abs_min_or_delta = number, -- delta if no max, absolute
+--                                           -- minimum if max specified
+--                abs_max          = number,
+--                count            = number  -- OPTIONAL default is 12
+--              }
+--   }
+
+--
+--  A table of ns seed locations is returned.  This table can
+--  be used directly in a FVX create_streamline cmd.
+--
+------------------------------------------------------------------
+
+create_rectangular_rake()

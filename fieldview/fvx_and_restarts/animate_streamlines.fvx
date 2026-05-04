@@ -1,0 +1,152 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+-- Animate Streamline Rakes
+-- This program does two things:
+--  1. Animate seeds in an X plane, thru Velocity
+--  2. Animate seeds in the X direction, using Velocity
+--     that constrains to YZ plane
+
+-- This version is controlled from a GUI panel,
+-- with buttons for X sweep, Z sweep and Break
+
+------------------------------------------------------------------
+function z_sweep()
+
+  s_table = { seeding = { seeds = {y=y_starts , z=z_starts},
+                          seed_coord = 'XYZ',
+			  mode = 'add'
+			},
+              visibility = 'on',
+              display_seeds = 'on',
+              calculation_parameters = {step =7,
+                                        direction = 'forward'}
+            }
+
+
+  z_inc={}
+  for j = 1, 12 do
+    z_inc[j] = (5.72425-z_starts[j]) / 10.
+  end
+
+-- "Sweep" the seeds in the Z coordinate only
+  for i = 1, 10 do
+      for j = 1, 12 do
+        xpts[j] = .674248
+        ypts[j] = y_starts[j]
+        zpts[j] = z_starts[j] + (i * z_inc[j])
+      end
+      s_table.seeding.seeds = {x=xpts, y=ypts, z=zpts}
+      s_table.vector_func = 'Velocity Vectors [PLOT3D]'
+      z_sweep_rake = create_streamline (s_table)
+
+      if break_flag then  --was break button pressed?
+         break
+      end
+
+  end
+
+end
+
+------------------------------------------------------------------
+function x_sweep()
+
+  -- "Sweep" the seeds in the X coordinate only
+  --  using a vector function that limits them to YZ plane
+
+  s_table = { seeding = {seeds = {y=y_starts , z=z_starts},
+                         seed_coord = 'XYZ',
+			 mode = 'add'
+			},
+              visibility = 'on',
+              display_seeds = 'on',
+              calculation_parameters = {step=7,
+                                        direction = 'both'}
+            }
+
+  steps = 30
+  xdelta = (14-0.674248)/steps
+
+  s_table.vector_func = 'YZ-Velocity'
+  s_table.scalar_func = 'Z'
+  s_table.calculation_parameters ={ time_limit = 1000,
+	                            direction = 'backward'
+	                          }
+  s_table.display_seeds = 'off'
+
+  for i = 1, steps do
+    for j = 1, 12 do
+       xpts[j] = .674248 + (xdelta*(i-1))
+    end
+
+    s_table.seeding.seeds.x =xpts
+
+    x_sweep_rake = create_streamline (s_table)
+
+    if break_flag then  --was break button pressed?
+       break
+    end
+
+  end
+
+end -- function x_sweep
+
+---------------------------------------------------------------
+-- main line
+
+--- Get the starting point of the viz and formula file
+
+fv_script('restart ALL animate_streamlines')
+
+-- declare tables for later
+
+xpts = {}   ypts = {}   zpts = {}
+
+-- All 12 seeds in the script have the same X value
+-- These are the Y coordinates of the 12 seeds in the script
+
+y_starts = {1.41508, 6.98212, 6.47603, 5.96993,
+            5.46384, 4.95774, 4.45165, 3.94555,
+            3.43946, 2.93336, 2.42727, 1.92117}
+
+-- These are the Z coordinates of the 12 seeds in the script
+
+z_starts = {.587737, .755331, .740095, .724859,
+            .709624, .694388, .679152, .663916,
+            .64868, .633445, .618209, .602973}
+
+-- Use a GUI to control the streamline sweep actions
+--
+
+panel_input = { title = "Streamline Sweeps",
+		xloc = 50, yloc = 115;    -- panel location
+
+		{ type = 'button',
+		  title = "Z Sweep",
+		  action = function()
+                     break_flag = nil
+                     z_sweep()
+		  end },
+
+		{ type = 'button',
+		  title = "X Sweep",
+		  action = function()
+                     break_flag = nil
+                     x_sweep()
+		  end },
+
+                { type = 'button',
+		  title = "Break",
+		  action = function()  -- break flag is set here
+                     break_flag=1     -- then checked in function
+		  end }
+
+   	       }
+
+my_panel = make_panel(panel_input)

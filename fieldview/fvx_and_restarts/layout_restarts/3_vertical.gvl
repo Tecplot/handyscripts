@@ -1,0 +1,27 @@
+layout_restart_version: 1
+num_panes: 3
+width: 800
+height: 800
+separator_width: 4
+pane_gfx_offset: 1
+current_pane_id: "2"
+index: 0
+type: splitter
+orientation: Vertical
+count: 3
+sizes: 264.264.264
+index: 0
+type: pane
+id: "0"
+name: "1"
+rect: 1, 1, 798, 262
+index: 1
+type: pane
+id: "1"
+name: "2"
+rect: 1, 269, 798, 262
+index: 2
+type: pane
+id: "2"
+name: "3"
+rect: 1, 537, 798, 262

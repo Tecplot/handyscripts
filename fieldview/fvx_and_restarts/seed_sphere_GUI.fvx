@@ -1,0 +1,45 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+
+dofile('seed_sphere_proto.fvx')
+
+------------------------------------------------------------------
+-- Create seed points for seed sphere
+------------------------------------------------------------------
+--  Seed Sphere Input Table
+--   { origin =                      -- location of sphere center
+--              { x_center = number,
+--                y_center = number,
+--                z_center = number
+--              },
+--     radius = number,              -- radius of sphere
+--     phi_count   = number,         -- count in phi direction
+--     theta_count = number,         -- count in theta direction
+--
+--   NOTE: phi_count is per quadrant and is multiplied by 4
+--
+--   HINT: To get a uniform spacing of seeds, use a phi_count
+--         to theta_count ratio of roughly 2 to 5
+--
+--  A table of n seed locations is returned.  This table can
+--  be used directly in a FVX create_streamline cmd.
+--
+--      n = 4 x phi_count x theta_count
+--
+--   }
+--
+-----------------------------------------------------------------
+
+-----------------------------------------------------------------
+-- Example to create a streamline seed sphere
+-----------------------------------------------------------------
+
+create_spherical_rake()

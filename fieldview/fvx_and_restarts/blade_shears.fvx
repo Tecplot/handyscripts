@@ -1,0 +1,160 @@
+-------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+-- 
+-- Description
+--   Calculate the blade shears on the surface of each blade
+--  in the kenics mixer, and produce histograms to illustrate.
+--
+-------------------------------------------------------------------
+
+	--read-in custom formulas through restart
+        path=''
+	
+	fv_script("RESTART FORMULA "..path.."polymer.frm")
+
+	--setup input argument for the function read_dataset()
+	 data_input_table = {
+ 	        data_format = "acusolve_unstructured",
+		input_parameters = {
+				name = path..'kenics.uns',
+				options = {
+					input_mode = "replace",
+					transient = "on"
+			                  },
+		                   }
+                            }
+
+
+	--call function to read dataset
+	read_dataset(data_input_table)
+
+	--set-up view through restart
+	fv_script("RESTART VIEW "..path.."polymer.vct")
+        fv_script("RESTART BOUNDARY "..path.."polymer.bnd")
+ 
+	--get all boundary types
+	b_types = get_all_boundary_types(1)
+	blades  = match_multiple_entries(b_types,"blade")
+        --stop()
+
+	--create four distinct blade boundary surfaces
+
+	print('...generating boundary surfaces for integration')
+	b = {}
+	for i = 1, 4 do
+		boundary_table = { types = {blades[i]},
+			           scalar_func = "shear",
+			           threshold_func = "shear",
+			           visibility = on
+		                 }
+		b[i] = create_boundary(boundary_table)
+	end
+
+-----------------------------------------------------------------------
+--In this section, we will create a histogram plot of shear stress
+--for each of the four boundary surfaces (blades) created earlier
+-----------------------------------------------------------------------
+
+--setup parameters
+min_val   = 0.0
+max_val   = 2400
+num_bins  = 24
+bin_width = (max_val-min_val)/num_bins
+bar_width = 0.90*(max_val/num_bins)    -- use 90% for spacing
+bin_area  = {}
+histogram = {}
+
+--loop through each blade
+for i = 1, 4 do
+	bin_area[i]={}
+	--loop through each bin, calculate bin area
+	for j = 1, num_bins do
+		boundary_table = {      -- change only threshold
+			threshold_range = {
+				min=(min_val + (j-1)*bin_width),
+				max=(min_val + j*bin_width),
+			                  }
+		                 }
+		modify(b[i],boundary_table)
+
+		--calculate area of integration
+		result = integrate_surface(b[i])
+		bin_area[i][j] = result.area
+
+	end --end of 'j' loop
+end --end of 'i' loop
+
+maxbin = {}
+for i=1,4 do
+    maxbin[i]=bin_area[i][1]
+    for j=2,num_bins do
+       if bin_area[i][j] > maxbin[i] then
+          maxbin[i] = bin_area[i][j]
+       end
+    end   
+end
+
+
+-----------------------------------------------------------------------
+--This section handles the histogram plot
+-----------------------------------------------------------------------
+
+--create graph for each blade
+   for i = 1, 4 do
+
+	graph_title = "Shear Stress: blade "..i
+	bar_option_table = { barwidth   = bar_width,
+		             foreground = "red",
+		             background = "darkred",
+		             mapy       = "y"
+	                   }
+	x = {}
+	y = {}
+
+	for j = 1, num_bins do
+		tinsert(x, min_val + (j-0.5)*bin_width)
+		tinsert(y, bin_area[i][j]/maxbin[i])
+	end
+
+	bar_table = { title  = "stress",
+		      xdata  = x,
+		      ydata  = y,
+		      option = bar_option_table
+	            }
+
+	--setup 'X' axis settings
+	 x_axis_table = { title      = "Shear Stress",
+		          titlecolor ='black'
+	                }
+	--setup 'Y' axis settings
+	 y_axis_table = { title      = "Number",
+		          titlecolor = 'black'
+	                }
+
+	--setup plot data
+	bar_data = {}
+	tinsert(bar_data, bar_table)
+
+	--setup input argument for graph function
+	 graph_input = { title = graph_title,
+			 grid = {}, -- turn on the grid display
+			 background = 'darkgrey',
+			 plotbackground = 'black',
+			 bar = bar_data,
+			 x_axis = x_axis_table,
+			 y_axis = y_axis_table,
+	               }
+
+	--call function to plot the data 
+	histogram[i] = graph(graph_input)
+
+   end -- end of 'i' loop
+
+

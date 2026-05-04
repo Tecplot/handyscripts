@@ -1,0 +1,43 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+
+make_panel{ title = 'length_fraction panel',
+
+   width = 400, height = 100,
+   xloc = 850,  yloc = 200;
+
+   { type = 'slider',
+     title =  'fraction: ',
+     value = {
+	    abs_min = 1e-6,
+	    current = 0.9,
+	    abs_max = 1.0,
+             },
+
+     drag_action = function(self) end,
+
+     action = function(self)
+        if 0 < StreamlinesTotalRakesInq() then
+           set_streamlines_display ({length_fraction = self:get().current});
+        end
+
+	if 0 < ParticlePathsTotalGroupsInq() then
+	   set_particle_paths_display({length_fraction = self:get().current});
+	end
+
+	redraw();
+
+              end,  -- end function
+
+   },  -- end slider definition
+
+          }  -- end make_panel
+
+

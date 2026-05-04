@@ -1,0 +1,98 @@
+boundary_restart_version: 10
+number_of_surfaces: 2
+type: 1
+color: 5
+dataset: 0
+scalar_fn: "Density (Q1)"
+scalar_minmax: 1.926000e-001 4.977500e+000
+thresh_fn: "Density (Q1)"
+thresh_minmax: 1.926000e-001 4.977500e+000
+vector_fn: "Momentum Vectors [PLOT3D]"
+thresh_flag: 0
+display_type: 3
+line_type: 1
+visible_flag: 1
+show_mesh_flag: 0
+transparency: 0.000000
+vec_type: 0
+vec_display_type: 1
+vec_length_scale: 1.000000e+000
+vec_head_scaling: 0
+vec_head_scale: 1.000000e+000
+vec_head_type: 3
+vector_u_min_max: -2.183500e+000 5.790300e+000
+vector_v_min_max: -3.252500e-001 3.545400e+000
+vector_w_min_max: -3.733900e+000 1.502900e+000
+num_boundary_types: 2
+selection_flag: 0
+selection_flag: 1
+contours: 0
+number_of_contours:  16
+contour_label_type:  2
+legend_title: 0
+legend_type: 1
+legend_label_color: 1
+legend_font: -205
+legend_text_size: 10
+legend_decimal_places: 3
+legend_xpos: 0.980000
+legend_ypos: 0.980000
+legend_btw_label_spacing: 0.050000
+legend_numerical_format: 1
+spectrum_type:  1
+spectrum_num_labels:  2
+spectrum_width:  0.050000
+spectrum_height:  5.000000
+surface_scale: 1.000000
+surface_angle: 0.000000
+surface_axis: 0.000000 0.000000 1.000000
+surface_trans: 0.000000 0.000000 0.000000
+surface_detached: 0
+type: 1
+color: 9
+dataset: 0
+scalar_fn: "Density (Q1)"
+scalar_minmax: 1.926000e-001 4.977500e+000
+thresh_fn: "Density (Q1)"
+thresh_minmax: 1.926000e-001 4.977500e+000
+vector_fn: "Momentum Vectors [PLOT3D]"
+thresh_flag: 0
+display_type: 4
+line_type: 1
+visible_flag: 1
+show_mesh_flag: 0
+transparency: 0.000000
+vec_type: 0
+vec_display_type: 1
+vec_length_scale: 1.000000e+000
+vec_head_scaling: 0
+vec_head_scale: 1.000000e+000
+vec_head_type: 3
+vector_u_min_max: -2.183500e+000 5.790300e+000
+vector_v_min_max: -3.252500e-001 3.545400e+000
+vector_w_min_max: -3.733900e+000 1.502900e+000
+num_boundary_types: 2
+selection_flag: 1
+selection_flag: 0
+contours: 0
+number_of_contours:  16
+contour_label_type:  2
+legend_title: 0
+legend_type: 1
+legend_label_color: 1
+legend_font: -205
+legend_text_size: 10
+legend_decimal_places: 3
+legend_xpos: 0.980000
+legend_ypos: 0.980000
+legend_btw_label_spacing: 0.050000
+legend_numerical_format: 1
+spectrum_type:  1
+spectrum_num_labels:  2
+spectrum_width:  0.050000
+spectrum_height:  5.000000
+surface_scale: 1.000000
+surface_angle: 0.000000
+surface_axis: 0.000000 0.000000 1.000000
+surface_trans: 0.000000 0.000000 0.000000
+surface_detached: 0

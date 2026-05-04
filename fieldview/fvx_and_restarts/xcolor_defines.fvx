@@ -1,0 +1,244 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+-- Description
+--   Define all standard X Colors
+------------------------------------------------------------------
+xcolors = {
+   AliceBlue = { name = 'AliceBlue', red =240, green =248, blue =255 },
+   AntiqueWhite = { name = 'AntiqueWhite', red =250, green =235, blue =215 },
+   Aqua = { name = 'Aqua', red =0, green =255, blue =255 },
+   Aquamarine = { name = 'Aquamarine', red =127, green =255, blue =212 },
+   Azure = { name = 'Azure', red =240, green =255, blue =255 },
+   Beige = { name = 'Beige', red =245, green =245, blue =220 },
+   Bisque = { name = 'Bisque', red =255, green =228, blue =196 },
+   Black = { name = 'Black', red =0, green =0, blue =0 },
+   BlanchedAlmond = { name = 'BlanchedAlmond', red =255, green =235, blue =205 },
+   Blue = { name = 'Blue', red =0, green =0, blue =255 },
+   BlueViolet = { name = 'BlueViolet', red =138, green =43, blue =226 },
+   Brown = { name = 'Brown', red =165, green =42, blue =42 },
+   BurlyWood = { name = 'BurlyWood', red =222, green =184, blue =135 },
+   CadetBlue = { name = 'CadetBlue', red =95, green =158, blue =160 },
+   Chartreuse = { name = 'Chartreuse', red =127, green =255, blue =0 },
+   Chocolate = { name = 'Chocolate', red =210, green =105, blue =30 },
+   Coral = { name = 'Coral', red =255, green =127, blue =80 },
+   CornflowerBlue = { name = 'CornflowerBlue', red =100, green =149, blue =237 },
+   Cornsilk = { name = 'Cornsilk', red =255, green =248, blue =220 },
+   Crimson = { name = 'Crimson', red =220, green =20, blue =60 },
+   Cyan = { name = 'Cyan', red =0, green =255, blue =255 },
+   DarkBlue = { name = 'DarkBlue', red =0, green =0, blue =139 },
+   DarkCyan = { name = 'DarkCyan', red =0, green =139, blue =139 },
+   DarkGoldenrod = { name = 'DarkGoldenrod', red =184, green =134, blue =11 },
+   DarkGray = { name = 'DarkGray', red =169, green =169, blue =169 },
+   DarkGreen = { name = 'DarkGreen', red =0, green =100, blue =0 },
+   DarkKhaki = { name = 'DarkKhaki', red =189, green =183, blue =107 },
+   DarkMagenta = { name = 'DarkMagenta', red =139, green =0, blue =139 },
+   DarkOliveGreen = { name = 'DarkOliveGreen', red =85, green =107, blue =47 },
+   DarkOrange = { name = 'DarkOrange', red =255, green =140, blue =0 },
+   DarkOrchid = { name = 'DarkOrchid', red =153, green =50, blue =204 },
+   DarkRed = { name = 'DarkRed', red =139, green =0, blue =0 },
+   DarkSalmon = { name = 'DarkSalmon', red =233, green =150, blue =122 },
+   DarkSeaGreen = { name = 'DarkSeaGreen', red =143, green =188, blue =143 },
+   DarkSlateBlue = { name = 'DarkSlateBlue', red =72, green =61, blue =139 },
+   DarkSlateGray = { name = 'DarkSlateGray', red =47, green =79, blue =79 },
+   DarkTurquoise = { name = 'DarkTurquoise', red =0, green =206, blue =209 },
+   DarkViolet = { name = 'DarkViolet', red =148, green =0, blue =211 },
+   DeepPink = { name = 'DeepPink', red =255, green =20, blue =147 },
+   DeepSkyBlue = { name = 'DeepSkyBlue', red =0, green =191, blue =255 },
+   DimGray = { name = 'DimGray', red =105, green =105, blue =105 },
+   DodgerBlue = { name = 'DodgerBlue', red =30, green =144, blue =255 },
+   FireBrick = { name = 'FireBrick', red =178, green =34, blue =34 },
+   FloralWhite = { name = 'FloralWhite', red =255, green =250, blue =240 },
+   ForestGreen = { name = 'ForestGreen', red =34, green =139, blue =34 },
+   Fuchsia = { name = 'Fuchsia', red =255, green =0, blue =255 },
+   Gainsboro = { name = 'Gainsboro', red =220, green =220, blue =220 },
+   GhostWhite = { name = 'GhostWhite', red =248, green =248, blue =255 },
+   Gold = { name = 'Gold', red =255, green =215, blue =0 },
+   Goldenrod = { name = 'Goldenrod', red =218, green =165, blue =32 },
+   Gray = { name = 'Gray', red =128, green =128, blue =128 },
+   Green = { name = 'Green', red =0, green =128, blue =0 },
+   GreenYellow = { name = 'GreenYellow', red =173, green =255, blue =47 },
+   Honeydew = { name = 'Honeydew', red =240, green =255, blue =240 },
+   HotPink = { name = 'HotPink', red =255, green =105, blue =180 },
+   IndianRed = { name = 'IndianRed', red =205, green =92, blue =92 },
+   Indigo = { name = 'Indigo', red =75, green =0, blue =130 },
+   Ivory = { name = 'Ivory', red =255, green =255, blue =240 },
+   Khaki = { name = 'Khaki', red =240, green =230, blue =140 },
+   Lavender = { name = 'Lavender', red =230, green =230, blue =250 },
+   LavenderBlush = { name = 'LavenderBlush', red =255, green =240, blue =245 },
+   LawnGreen = { name = 'LawnGreen', red =124, green =252, blue =0 },
+   LemonChiffon = { name = 'LemonChiffon', red =255, green =250, blue =205 },
+   LightBlue = { name = 'LightBlue', red =173, green =216, blue =230 },
+   LightCoral = { name = 'LightCoral', red =240, green =128, blue =128 },
+   LightCyan = { name = 'LightCyan', red =224, green =255, blue =255 },
+   LightGoldenrodYellow = { name = 'LightGoldenrodYellow', red =250, green =250, blue =210 },
+   LightGreen = { name = 'LightGreen', red =144, green =238, blue =144 },
+   LightGrey = { name = 'LightGrey', red =211, green =211, blue =211 },
+   LightPink = { name = 'LightPink', red =255, green =182, blue =193 },
+   LightSalmon = { name = 'LightSalmon', red =255, green =160, blue =122 },
+   LightSeaGreen = { name = 'LightSeaGreen', red =32, green =178, blue =170 },
+   LightSkyBlue = { name = 'LightSkyBlue', red =135, green =206, blue =250 },
+   LightSlateGray = { name = 'LightSlateGray', red =119, green =136, blue =153 },
+   LightSteelBlue = { name = 'LightSteelBlue', red =176, green =196, blue =222 },
+   LightYellow = { name = 'LightYellow', red =255, green =255, blue =224 },
+   Lime = { name = 'Lime', red =0, green =255, blue =0 },
+   LimeGreen = { name = 'LimeGreen', red =50, green =205, blue =50 },
+   Linen = { name = 'Linen', red =250, green =240, blue =230 },
+   Magenta = { name = 'Magenta', red =255, green =0, blue =255 },
+   Maroon = { name = 'Maroon', red =128, green =0, blue =0 },
+   MediumAquamarine = { name = 'MediumAquamarine', red =102, green =205, blue =170 },
+   MediumBlue = { name = 'MediumBlue', red =0, green =0, blue =205 },
+   MediumOrchid = { name = 'MediumOrchid', red =186, green =85, blue =211 },
+   MediumPurple = { name = 'MediumPurple', red =147, green =112, blue =219 },
+   MediumSeaGreen = { name = 'MediumSeaGreen', red =60, green =179, blue =113 },
+   MediumSlateBlue = { name = 'MediumSlateBlue', red =123, green =104, blue =238 },
+   MediumSpringGreen = { name = 'MediumSpringGreen', red =0, green =250, blue =154 },
+   MediumTurquoise = { name = 'MediumTurquoise', red =72, green =209, blue =204 },
+   MediumVioletRed = { name = 'MediumVioletRed', red =199, green =21, blue =133 },
+   MidnightBlue = { name = 'MidnightBlue', red =25, green =25, blue =112 },
+   MintCream = { name = 'MintCream', red =245, green =255, blue =250 },
+   MistyRose = { name = 'MistyRose', red =255, green =228, blue =225 },
+   Moccasin = { name = 'Moccasin', red =255, green =228, blue =181 },
+   NavajoWhite = { name = 'NavajoWhite', red =255, green =222, blue =173 },
+   Navy = { name = 'Navy', red =0, green =0, blue =128 },
+   OldLace = { name = 'OldLace', red =253, green =245, blue =230 },
+   Olive = { name = 'Olive', red =128, green =128, blue =0 },
+   OliveDrab = { name = 'OliveDrab', red =107, green =142, blue =35 },
+   Orange = { name = 'Orange', red =255, green =165, blue =0 },
+   OrangeRed = { name = 'OrangeRed', red =255, green =69, blue =0 },
+   Orchid = { name = 'Orchid', red =218, green =112, blue =214 },
+   PaleGoldenrod = { name = 'PaleGoldenrod', red =238, green =232, blue =170 },
+   PaleGreen = { name = 'PaleGreen', red =152, green =251, blue =152 },
+   PaleTurquoise = { name = 'PaleTurquoise', red =175, green =238, blue =238 },
+   PaleVioletRed = { name = 'PaleVioletRed', red =219, green =112, blue =147 },
+   PapayaWhip = { name = 'PapayaWhip', red =255, green =239, blue =213 },
+   PeachPuff = { name = 'PeachPuff', red =255, green =218, blue =185 },
+   Peru = { name = 'Peru', red =205, green =133, blue =63 },
+   Pink = { name = 'Pink', red =255, green =192, blue =203 },
+   Plum = { name = 'Plum', red =221, green =160, blue =221 },
+   PowderBlue = { name = 'PowderBlue', red =176, green =224, blue =230 },
+   Purple = { name = 'Purple', red =128, green =0, blue =128 },
+   Red = { name = 'Red', red =255, green =0, blue =0 },
+   RosyBrown = { name = 'RosyBrown', red =188, green =143, blue =143 },
+   RoyalBlue = { name = 'RoyalBlue', red =65, green =105, blue =225 },
+   SaddleBrown = { name = 'SaddleBrown', red =139, green =69, blue =19 },
+   Salmon = { name = 'Salmon', red =250, green =128, blue =114 },
+   SandyBrown = { name = 'SandyBrown', red =244, green =164, blue =96 },
+   SeaGreen = { name = 'SeaGreen', red =46, green =139, blue =87 },
+   Seashell = { name = 'Seashell', red =255, green =245, blue =238 },
+   Sienna = { name = 'Sienna', red =160, green =82, blue =45 },
+   Silver = { name = 'Silver', red =192, green =192, blue =192 },
+   SkyBlue = { name = 'SkyBlue', red =135, green =206, blue =235 },
+   SlateBlue = { name = 'SlateBlue', red =106, green =90, blue =205 },
+   SlateGray = { name = 'SlateGray', red =112, green =128, blue =144 },
+   Snow = { name = 'Snow', red =255, green =250, blue =250 },
+   SpringGreen = { name = 'SpringGreen', red =0, green =255, blue =127 },
+   SteelBlue = { name = 'SteelBlue', red =70, green =130, blue =180 },
+   Tan = { name = 'Tan', red =210, green =180, blue =140 },
+   Teal = { name = 'Teal', red =0, green =128, blue =128 },
+   Thistle = { name = 'Thistle', red =216, green =191, blue =216 },
+   Tomato = { name = 'Tomato', red =255, green =99, blue =71 },
+   Turquoise = { name = 'Turquoise', red =64, green =224, blue =208 },
+   Violet = { name = 'Violet', red =238, green =130, blue =238 },
+   Wheat = { name = 'Wheat', red =245, green =222, blue =179 },
+   White = { name = 'White', red =255, green =255, blue =255 },
+   WhiteSmoke = { name = 'WhiteSmoke', red =245, green =245, blue =245 },
+   Yellow = { name = 'Yellow', red =255, green =255, blue =0 },
+   YellowGreen = { name = 'YellowGreen', red =154, green =205, blue =50 },
+      }
+
+--  end X Color definitions
+
+------------------------------------------------------------------
+------------------------------------------------------------------
+-- Function returns table of matching color entries
+--  match is based on color name, defined as color_match
+--  if color_match == nil, all Xcolor names are returned
+------------------------------------------------------------------
+function match_colors(color_match)
+
+   local count = 0
+   local colornames = {}
+   local red_values = {}
+   local blue_values = {}
+   local green_values = {}
+   local num_colors
+
+   for iField,iValue in xcolors do
+      --print('Field Name is --> ',iField,' Field Value is -->',iValue)
+      count = count + 1
+
+      for jField,jValue in iValue do
+          --print('Field Name is --> ',i,' Field Value is -->',j)
+          if jField=='name' then tinsert(colornames,jValue) end
+          if jField=='red'  then tinsert(red_values,jValue) end
+          if jField=='blue'  then tinsert(blue_values,jValue) end
+          if jField=='green'  then tinsert(green_values,jValue) end
+      end
+   end
+
+   --print('Total X Color defs is ',count)
+
+   if color_match == nil then
+     matched_color_names = colornames
+   else
+     matched_color_names = match_multiple_entries(colornames,color_match)
+   end
+
+   num_colors = getn(matched_color_names)
+
+   --
+   -- sort colors by name
+   --
+   for i=1,num_colors do
+      for j=num_colors,(i+1),-1 do
+         --
+         -- could also sort by either red, green, blue or sum
+         --
+         if (matched_color_names[j] < matched_color_names[j-1]) then
+            tmp = matched_color_names[j]
+            matched_color_names[j] = matched_color_names[j-1]
+            matched_color_names[j-1] = tmp
+         end
+      end
+   end
+
+   return matched_color_names
+
+end
+
+------------------------------------------------------------------
+------------------------------------------------------------------
+-- Return an entry for the set_color cmd
+--  from the list of Xcolors
+------------------------------------------------------------------
+function set_Xcolor(Xcolor_name)
+
+   geom_Xcolor = {}
+
+   for iField,iValue in xcolors do
+
+      if iField==Xcolor_name then
+         for jField,jValue in iValue do
+             --print('Field Name is --> ',jField,' Field Value is -->',jValue)
+
+             if jField=='name' then geom_Xcolor.name = jValue end
+             if jField=='red'  then geom_Xcolor.red  = jValue end
+             if jField=='blue'  then geom_Xcolor.blue  = jValue end
+             if jField=='green'  then geom_Xcolor.green  = jValue end
+         end
+      end
+
+   end
+
+   return geom_Xcolor
+
+end
+

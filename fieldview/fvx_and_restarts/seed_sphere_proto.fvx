@@ -1,0 +1,373 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+-- Create seed points for seed sphere
+
+function make_seed_sphere(seed_sphere_input_table)
+------------------------------------------------------------------
+--  Seed Sphere Input Table
+--   { dataset = dataset_num         -- default is 1
+--     origin =                      -- location of sphere center
+--              { x_center = number,
+--                y_center = number,
+--                z_center = number
+--              },
+--     radius = number,              -- radius of sphere
+--     phi_count   = number,         -- count in phi direction
+--                                   -- OPTIONAL default is 4
+--     theta_count = number,         -- count in theta direction
+--                                   -- OPTIONAL default is 10
+--   }
+--
+--   NOTE: phi_count is per quadrant and is multiplied by 4
+--
+--   HINT: To get a uniform spacing of seeds, use a phi_count
+--         to theta_count ratio of roughly 2 to 5
+--
+--  A table of n seed locations is returned.  This table can
+--  be used directly in a FVX create_streamline cmd.
+--
+------------------------------------------------------------------
+--
+-- Define local variables
+
+   local sx = {}  sy = {}  sz = {}   -- seed coordinate values
+   local sc = {x=sx,y=sy,z=sz}       -- seed coordinate table
+   local xc, yc, zc, rc              -- sphere center and radius
+   local m, n                        -- phi, theta counts
+   local i,j,jj                      -- local loop indeces
+   local error_code = 0
+
+   fv_script('PANELS OFF')
+
+   -- Check phi count -------------------------------------------
+   if seed_sphere_input_table.phi_count ~= nil then
+      m = seed_sphere_input_table.phi_count
+      if m <= 1 then
+         print('Error in phi_count specification.')
+         error_code = 1
+         fv_script('PANELS ON')
+         return sc, error_code
+      end
+   else
+      print('Using phi_count default = 4')
+      m = 4     -- DEFAULT VALUE
+   end
+
+   -- Check theta count -----------------------------------------
+   if seed_sphere_input_table.theta_count ~=nil then
+      n = seed_sphere_input_table.theta_count
+      if n <= 1 then
+         print('Error in theta_count specification.')
+         error_code = 1
+         fv_script('PANELS ON')
+         return sc, error_code
+      end
+   else
+      print('Using theta_count default = 10')
+      n = 10    -- DEFAULT VALUE
+   end
+
+   -- Check origin specifications -------------------------------
+   if seed_sphere_input_table.origin.x_center ~= nil then
+      xc = seed_sphere_input_table.origin.x_center
+   else
+      print('Error in specification of x-coord for sphere center')
+      error_code = 1
+      fv_script('PANELS ON')
+      return sc, error_code
+   end
+   if seed_sphere_input_table.origin.y_center ~= nil then
+      yc = seed_sphere_input_table.origin.y_center
+   else
+      print('Error in specification of y-coord for sphere center')
+      error_code = 1
+      fv_script('PANELS ON')
+      return sc, error_code
+   end
+   if seed_sphere_input_table.origin.z_center ~= nil then
+      zc = seed_sphere_input_table.origin.z_center
+   else
+      print('Error in specification of z-coord for sphere center')
+      error_code = 1
+      fv_script('PANELS ON')
+      return sc, error_code
+   end
+
+   -- Check sphere radius ---------------------------------------
+   if seed_sphere_input_table.radius ~= nil then
+      rc = seed_sphere_input_table.radius
+      if rc <= 0 then
+         print('Sphere radius cannot be less than or equal to zero.')
+         error_code = 1
+         fv_script('PANELS ON')
+         return sc, error_code
+      end
+   else
+      print('Error in specification of sphere radius')
+      error_code = 1
+      fv_script('PANELS ON')
+      return sc, error_code
+   end
+
+   -- Check sphere origin ---------------------------------------
+   --test_probe = probe_current_functions({xc,yc,zc})
+   --if test_probe == nil then
+   --   print('Sphere center does not lie within the dataset.')
+   --   error_code = 1
+   --   fv_script('PANELS ON')
+   --   return sc, error_code
+   --end
+
+   -- Check for max seeds limit ---------------------------------
+   total_seeds = m*n*4+n*2
+   if total_seeds > 2000 then
+      print('Maximum seeds (2000 per rake) is exceeded.')
+      print('Recommend smaller value(s) for phi_ or theta_count.')
+      error_code = 1
+      fv_script('PANELS ON')
+      return sc, error_code
+   end
+
+   d_phi = 360/m
+   d_theta = 180/n
+   radius = rc
+
+   ns = 1
+
+   fix_end = 0
+
+   for jj=1,4 do
+      for j=1,m do
+        if mod(jj,2) == 0 then
+          adeg = (m-j)/m
+        else
+          adeg = j/m
+        end
+
+        if jj == 1 then
+           phi = asin(adeg)
+        elseif jj == 2 then
+           phi = 180 - asin(adeg)
+        elseif jj == 3 then
+           phi = 180 + asin(adeg)
+        else
+           phi = 360 - asin(adeg)
+        end
+
+        if phi ==  90 then phi = phi*(1 - 1/(m)) fix_end = 1 end
+        if phi == 270 then phi = phi*(1 - 1/(m*3)) fix_end = 1 end
+
+        for i=1,n do
+          theta = (i-1.0)*d_theta
+          sx[ns]=radius*sin(theta)*cos(phi)+xc
+          sy[ns]=radius*cos(theta)*cos(phi)+yc
+          sz[ns]=radius*sin(phi)+zc
+          ns=ns+1
+
+          if fix_end == 1 then
+             sx[ns]=radius*sin(theta)*cos(-phi)+xc
+             sy[ns]=radius*cos(theta)*cos(-phi)+yc
+             sz[ns]=radius*sin(-phi)+zc
+             ns=ns+1
+          end
+        end
+
+        fix_end = 0
+
+      end
+   end
+
+   -- Check to make sure all seeds are in dataset ----------------
+   i=1
+   while sx[i] ~= nil do
+      test_probe = probe_current_functions({sx[i],sy[i],sz[i]})
+      if test_probe == nil then
+         error_code = 2
+         tremove(sx,i)
+         tremove(sy,i)
+         tremove(sz,i)
+      end
+      i = i + 1
+   end
+   if error_code == 2 then
+      print('Seeds lie outside the dataset.')
+   end
+
+   fv_script('PANELS ON')
+
+   return sc, error_code  -- return table of seed coordinates
+end
+
+------------------------------------------------------------------
+------------------------------------------------------------------
+function set_defaults()
+
+   -- Initialize defaults for a basic streamline rake
+   x_center_def    = 0.0
+   y_center_def    = 0.0
+   z_center_def    = 0.0
+   radius_def      = 1.0
+   phi_count_def   = 4
+   theta_count_def = 12
+   current_rake    = 0
+
+   rake_ID         = {}  -- provide for a table of rakes
+
+end
+
+function Create_Rake()
+
+   -- probe for needed vector function
+   vector_funcs = get_vector_functions(1)
+   if vector_funcs == nil then
+      no_vec = 1
+   else
+      no_vec = 0
+   end
+
+   current_rake = current_rake + 1
+
+   -- Check Inputs to the streamline creation
+   if x_center == nil then x_center = x_center_def end
+   if y_center == nil then y_center = y_center_def end
+   if z_center == nil then z_center = z_center_def end
+   if sph_radius == nil then sph_radius = radius_def end
+   if phi_count == nil then phi_count = phi_count_def end
+   if theta_count == nil then theta_count = theta_count_def end
+
+   seed_sphere_parameters = { dataset = 1,
+                              origin = { x_center =  x_center,
+                                         y_center =  y_center,
+                                         z_center =  z_center
+                                       },
+                              radius = sph_radius,
+                              phi_count   =  phi_count,
+                              theta_count =  theta_count,
+                            }
+
+   my_sc, err_code = make_seed_sphere(seed_sphere_parameters)
+
+   if (err_code ~= 1) and (no_vec == 0) then
+
+      rake_ID[current_rake] =
+               create_streamline({
+                    seeds = my_sc,
+                    visibility     = 'on',
+                    display_seeds  = 'on',
+                    vector_func    = vector_funcs[1],
+                    --
+                    calculation_parameters = {
+                             step = 9,
+                             direction = 'forward',
+                                            }
+                                })
+
+      set_streamlines_display({display_type='complete'})
+   else
+     if no_vec == 1 then
+        print('Invalid Rake Parameters or No Vector Function available.')
+     end
+   end
+
+end
+
+function Delete_Rake()
+
+  -- Delete the current rake
+  if current_rake >= 1 then
+     delete(rake_ID[current_rake])
+     current_rake = current_rake - 1
+  end
+end
+
+function create_spherical_rake()
+
+
+  GUI_setup = { title = 'Spherical Seed Distribution',
+                xloc = 50, yloc = 400;
+                { type   = 'text',
+                  title  = 'X-center',
+                  action = function(self)
+                             x_center = self:get()
+                             print(x_center)
+                             self:set(format('%16.4f', x_center))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Y-center',
+                  action = function(self)
+                             y_center = self:get()
+                             self:set(format('%16.4f', y_center))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Z-center',
+                  action = function(self)
+                             z_center = self:get()
+                             self:set(format('%16.4f', z_center))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Radius        ',
+                  action = function(self)
+                             sph_radius = self:get()
+                             self:set(format('%16.4f', sph_radius))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Phi Count    ',
+                  action = function(self)
+                             phi_count = self:get()
+                             self:set(format('%12.0f', phi_count))
+                           end,
+                },
+                { type   = 'text',
+                  title  = 'Theta Count',
+                  action = function(self)
+                             theta_count = self:get()
+                             self:set(format('%12.0f', theta_count))
+                           end,
+                },
+                { type   = 'button',
+                  title  = 'Create Streamline Rake',
+                  action = function()
+                             Create_Rake()
+                           end,
+                },
+                { type   = 'button',
+                  title  = 'Delete Streamline Rake',
+                  action = function()
+                             Delete_Rake()
+                           end,
+                }
+              }
+
+  spherical_rake_GUI = make_panel(GUI_setup)
+
+  set_defaults()
+
+  -- Apply defaults to GUI
+  spherical_rake_GUI[1]:set(format('%16.4f', x_center_def))
+  spherical_rake_GUI[2]:set(format('%16.4f', y_center_def))
+  spherical_rake_GUI[3]:set(format('%16.4f', z_center_def))
+
+  spherical_rake_GUI[4]:set(format('%16.4f', radius_def))
+  spherical_rake_GUI[5]:set(format('%12.0f', phi_count_def))
+  spherical_rake_GUI[6]:set(format('%12.0f', theta_count_def))
+
+  -- Force defaults onto globals
+  x_center    = x_center_def
+  y_center    = y_center_def
+  z_center    = z_center_def
+  sph_radius  = radius_def
+  phi_count   = phi_count_def
+  theta_count = theta_count_def
+
+end

@@ -1,0 +1,157 @@
+------------------------------------------------------------------
+--  Copyright (c) 2025 Tecplot, Inc.                            --
+--  All rights reserved.                                        --
+--                                                              --
+-- This sample FVX script is not supported by Tecplot, Inc.     --
+-- and Tecplot, Inc. provides no warranties or assurances       --
+-- about its fitness or merchantability.  It is provided at no  --
+-- cost and is for demonstration purposes only.                 --
+------------------------------------------------------------------
+--
+-- Description
+--   Create 2D plot of variable against distance along streamline
+--
+-- initialize some tables and values
+j=1
+varn={}
+cpts={}
+path={}
+pathx={}
+pathy={}
+pathz={}
+pathv1={}
+pathv2={}
+s={}
+ds={}
+line_table={}
+x={}
+y={}
+npts=1
+-----------------------------------------------------------------------
+function main()
+fv_script("EXPORT STREAM stream.exp")
+path_file=openfile("stream.exp","r")
+if path_file == nil then
+	print("Error opening file")
+else
+	print("File opened, reading file")
+	read_file()
+	print("Read file, plotting....")
+	create_plot()
+	print("Plot complete")
+end
+end
+------------------------------------------------------------------------
+function read_file()
+maxstr=1000 -- maximum number of streamlines can read in
+-- read header lines
+dummy= read(path_file, "*l")  -- read FVParticles
+dummy= read(path_file, "*l")  -- read Tag Names
+if (dummy == "Tag Names" ) then  -- reading FV9.1 export
+   dummy= read(path_file, "*l")  -- read '0'
+   dummy= read(path_file, "*l")  -- read Variable Names
+end
+nvars=read(path_file,"*n")
+dummy=read(path_file,"*l")
+-- read variable names
+for i=1,nvars do
+	varn[i]=read(path_file,"*l")
+end
+cnt=0
+-- read streamline data
+for k=1,maxstr do
+	npts = read(path_file, "*n")
+	if npts==nil then
+		npths=j-1
+		break
+	end
+	cpts[k]=npts
+	s[cnt+1]=0
+	ds[cnt+1]=0
+	for i=1,npts do
+		cnt=cnt+1
+-- read xyz coords of streamline point
+		pathx[i]=read(path_file, "*n")
+		pathy[i]=read(path_file, "*n")
+		pathz[i]=read(path_file, "*n")
+-- hard wired two variables read here, would have to change if file format changed
+		pathv1[i]=read(path_file, "*n")
+		pathv2[i]=read(path_file, "*n")
+-- calculate distance along streamline
+		if i>1 then
+			dx=pathx[i]-pathx[i-1]
+			dy=pathy[i]-pathy[i-1]
+			dz=pathz[i]-pathz[i-1]
+			ds[i]=sqrt((dx*dx)+(dy*dy)+(dz*dz))
+			s[cnt]=s[cnt-1]+ds[i]
+		end
+-- choose what to plot against what, and label.....
+		x[cnt]=s[cnt]
+		y[cnt]=pathv2[i]
+		x_axis_title="Distance along Streamline"
+		y_axis_title=varn[2]
+	end
+	j=j+1
+end
+closefile(path_file)
+end
+------------------------------------------------------------------------------------
+function create_plot()
+cnt=0
+maxpts=3200 -- max number of pts per line on plot
+colours={"blue", "red", "green", "yellow", "cyan", "purple"}
+ncol=getn(colours)
+sym={"square", "circle", "diamond", "plus", "cross", "splus", "scross", "triangle"}
+nsym=getn(sym)
+for i=1,npths do
+	st={}
+	yt={}
+	trunc=0
+	for j=1,cpts[i] do
+		cnt=cnt+1
+-- do I need to truncate line?
+		if j <= maxpts then
+			st[j]=s[cnt]
+			yt[j]=y[cnt]
+		else
+			trunc=1
+		end
+	end
+	if trunc==1 then
+		print("Streamline "..i.." has too many points, truncating to first "..maxpts.." points.")
+	end
+-- choose line colour and symbol
+	k=i
+	l=1
+	while k > ncol do
+		k=k-ncol
+		l=l+1
+	end
+	if l > nsym then
+		l=1
+	end
+-- construct line table for input to graph table
+
+
+line_table[i]={
+	title="Streamline "..i,
+	xdata=st,
+	ydata=yt,
+	option={pixels=2, color=colours[k], symbol=sym[l]}
+}
+end
+-- construct graph_table for input to graphing function
+graph_table={
+	title="Plot of "..y_axis_title.." against "..x_axis_title,
+	grid={},
+	background="white",
+	plotbackground="lightgrey",
+	line=line_table,
+	x_axis={title=x_axis_title},
+	y_axis={title=y_axis_title}
+}
+-- produce graph
+graph1=graph(graph_table)
+end
+----------------------------------------------------------------------
+main()
