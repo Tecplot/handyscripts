@@ -1,7 +1,7 @@
 #!MC 1410
 # Colorblind Friendly colormap
 $!CREATECOLORMAP
-  NAME = 'FieldView - Colorblind Friendly (achromatic_vision2.col)'
+  NAME = 'FieldView - Achromatic Vision 2 (achromatic_vision2.col)'
   NUMCONTROLPOINTS = 11
   CONTROLPOINT 1 { COLORMAPFRACTION = 0.0 LEADRGB { R =   0 G =   0 B =   0 } TRAILRGB { R =   0 G =   0 B =   0 } }
   CONTROLPOINT 2 { COLORMAPFRACTION = 0.08163265306122448 LEADRGB { R =   1 G =   2 B =  40 } TRAILRGB { R =   1 G =   2 B =  40 } }

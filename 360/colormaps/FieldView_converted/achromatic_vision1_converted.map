@@ -1,7 +1,7 @@
 #!MC 1410
 # J. Mcnames, "An Effective Color Scale For Simultaneous Color And Gray Scale Publications," Ieee Signal Processing Magazine, In Press (January 2006) colormap
 $!CREATECOLORMAP
-  NAME = 'FieldView - J. McNames, "An effective color scale for simultaneous color and gray-scale publications," IEEE Signal Processing Magazine, in press (January 2006) (achromatic_vision1.col)'
+  NAME = 'FieldView - Achromatic Vision 1 (achromatic_vision1.col)'
   NUMCONTROLPOINTS = 11
   CONTROLPOINT 1 { COLORMAPFRACTION = 0.0 LEADRGB { R =   0 G =   0 B =   0 } TRAILRGB { R =   0 G =   0 B =   0 } }
   CONTROLPOINT 2 { COLORMAPFRACTION = 0.08163265306122448 LEADRGB { R =   5 G =  15 B =  15 } TRAILRGB { R =   5 G =  15 B =  15 } }
