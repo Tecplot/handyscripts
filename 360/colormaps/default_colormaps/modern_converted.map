@@ -1,0 +1,133 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Modern - converted '
+  NumControlPoints = 8
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 100
+      G = 35
+      B = 100
+      }
+    TrailRGB
+      {
+      R = 100
+      G = 35
+      B = 100
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1429
+    LeadRGB
+      {
+      R = 35
+      G = 35
+      B = 100
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 0
+      B = 255
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.2857
+    LeadRGB
+      {
+      R = 35
+      G = 100
+      B = 100
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 0
+      B = 255
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.4286
+    LeadRGB
+      {
+      R = 35
+      G = 100
+      B = 35
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 255
+      B = 255
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.5714
+    LeadRGB
+      {
+      R = 100
+      G = 100
+      B = 35
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 255
+      B = 0
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.7143
+    LeadRGB
+      {
+      R = 85
+      G = 46
+      B = 10
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 0
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 0.8571
+    LeadRGB
+      {
+      R = 100
+      G = 35
+      B = 35
+      }
+    TrailRGB
+      {
+      R = 217
+      G = 117
+      B = 26
+      }
+    }
+  ControlPoint 8
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    }

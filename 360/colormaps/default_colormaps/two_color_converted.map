@@ -1,0 +1,53 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Two Color - converted '
+  NumControlPoints = 3
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 128
+      G = 0
+      B = 128
+      }
+    TrailRGB
+      {
+      R = 128
+      G = 0
+      B = 128
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 0
+      G = 0
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 0
+      B = 255
+      }
+    }

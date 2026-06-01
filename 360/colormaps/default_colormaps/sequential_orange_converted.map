@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Sequential - Orange - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 254
+      G = 237
+      B = 222
+      }
+    TrailRGB
+      {
+      R = 254
+      G = 237
+      B = 222
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 253
+      G = 208
+      B = 162
+      }
+    TrailRGB
+      {
+      R = 253
+      G = 208
+      B = 162
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 253
+      G = 174
+      B = 107
+      }
+    TrailRGB
+      {
+      R = 253
+      G = 174
+      B = 107
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 253
+      G = 141
+      B = 60
+      }
+    TrailRGB
+      {
+      R = 253
+      G = 141
+      B = 60
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 241
+      G = 105
+      B = 19
+      }
+    TrailRGB
+      {
+      R = 241
+      G = 105
+      B = 19
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 217
+      G = 72
+      B = 1
+      }
+    TrailRGB
+      {
+      R = 217
+      G = 72
+      B = 1
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 140
+      G = 45
+      B = 4
+      }
+    TrailRGB
+      {
+      R = 140
+      G = 45
+      B = 4
+      }
+    }

@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Sequential - Blue/Purple - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 3
+      G = 78
+      B = 123
+      }
+    TrailRGB
+      {
+      R = 3
+      G = 78
+      B = 123
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 5
+      G = 112
+      B = 176
+      }
+    TrailRGB
+      {
+      R = 5
+      G = 112
+      B = 176
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 54
+      G = 144
+      B = 192
+      }
+    TrailRGB
+      {
+      R = 54
+      G = 144
+      B = 192
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 116
+      G = 169
+      B = 207
+      }
+    TrailRGB
+      {
+      R = 116
+      G = 169
+      B = 207
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 166
+      G = 189
+      B = 219
+      }
+    TrailRGB
+      {
+      R = 166
+      G = 189
+      B = 219
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 208
+      G = 209
+      B = 230
+      }
+    TrailRGB
+      {
+      R = 208
+      G = 209
+      B = 230
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 241
+      G = 238
+      B = 246
+      }
+    TrailRGB
+      {
+      R = 241
+      G = 238
+      B = 246
+      }
+    }

@@ -1,0 +1,101 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Modified Rainbow - Dark ends - converted '
+  NumControlPoints = 6
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 0
+      G = 0
+      B = 130
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 0
+      B = 130
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.2
+    LeadRGB
+      {
+      R = 0
+      G = 0
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 0
+      B = 255
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.4
+    LeadRGB
+      {
+      R = 0
+      G = 255
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 255
+      B = 255
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.6
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 0
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.8
+    LeadRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 130
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 130
+      G = 0
+      B = 0
+      }
+    }

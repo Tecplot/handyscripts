@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Diverging - Blue/Yellow/Red - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 69
+      G = 117
+      B = 180
+      }
+    TrailRGB
+      {
+      R = 69
+      G = 117
+      B = 180
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 145
+      G = 191
+      B = 219
+      }
+    TrailRGB
+      {
+      R = 145
+      G = 191
+      B = 219
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 224
+      G = 243
+      B = 248
+      }
+    TrailRGB
+      {
+      R = 224
+      G = 243
+      B = 248
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 191
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 191
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 254
+      G = 224
+      B = 144
+      }
+    TrailRGB
+      {
+      R = 254
+      G = 224
+      B = 144
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 252
+      G = 141
+      B = 89
+      }
+    TrailRGB
+      {
+      R = 252
+      G = 141
+      B = 89
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 215
+      G = 48
+      B = 39
+      }
+    TrailRGB
+      {
+      R = 215
+      G = 48
+      B = 39
+      }
+    }
