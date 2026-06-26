@@ -1,0 +1,325 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Elevation - Absolute - converted '
+  NumControlPoints = 20
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 0
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.0526
+    LeadRGB
+      {
+      R = 3
+      G = 13
+      B = 116
+      }
+    TrailRGB
+      {
+      R = 3
+      G = 13
+      B = 116
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.1053
+    LeadRGB
+      {
+      R = 12
+      G = 42
+      B = 119
+      }
+    TrailRGB
+      {
+      R = 12
+      G = 42
+      B = 119
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.1579
+    LeadRGB
+      {
+      R = 22
+      G = 69
+      B = 120
+      }
+    TrailRGB
+      {
+      R = 22
+      G = 69
+      B = 120
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.2105
+    LeadRGB
+      {
+      R = 31
+      G = 94
+      B = 124
+      }
+    TrailRGB
+      {
+      R = 31
+      G = 94
+      B = 124
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.2632
+    LeadRGB
+      {
+      R = 41
+      G = 115
+      B = 125
+      }
+    TrailRGB
+      {
+      R = 41
+      G = 115
+      B = 125
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 0.3158
+    LeadRGB
+      {
+      R = 50
+      G = 130
+      B = 121
+      }
+    TrailRGB
+      {
+      R = 50
+      G = 130
+      B = 121
+      }
+    }
+  ControlPoint 8
+    {
+    ColorMapFraction = 0.3684
+    LeadRGB
+      {
+      R = 55
+      G = 138
+      B = 106
+      }
+    TrailRGB
+      {
+      R = 55
+      G = 138
+      B = 106
+      }
+    }
+  ControlPoint 9
+    {
+    ColorMapFraction = 0.4211
+    LeadRGB
+      {
+      R = 61
+      G = 145
+      B = 89
+      }
+    TrailRGB
+      {
+      R = 61
+      G = 145
+      B = 89
+      }
+    }
+  ControlPoint 10
+    {
+    ColorMapFraction = 0.4737
+    LeadRGB
+      {
+      R = 93
+      G = 161
+      B = 75
+      }
+    TrailRGB
+      {
+      R = 93
+      G = 161
+      B = 75
+      }
+    }
+  ControlPoint 11
+    {
+    ColorMapFraction = 0.5263
+    LeadRGB
+      {
+      R = 121
+      G = 167
+      B = 82
+      }
+    TrailRGB
+      {
+      R = 121
+      G = 167
+      B = 82
+      }
+    }
+  ControlPoint 12
+    {
+    ColorMapFraction = 0.5789
+    LeadRGB
+      {
+      R = 143
+      G = 172
+      B = 86
+      }
+    TrailRGB
+      {
+      R = 143
+      G = 172
+      B = 86
+      }
+    }
+  ControlPoint 13
+    {
+    ColorMapFraction = 0.6316
+    LeadRGB
+      {
+      R = 165
+      G = 179
+      B = 89
+      }
+    TrailRGB
+      {
+      R = 165
+      G = 179
+      B = 89
+      }
+    }
+  ControlPoint 14
+    {
+    ColorMapFraction = 0.6842
+    LeadRGB
+      {
+      R = 184
+      G = 180
+      B = 93
+      }
+    TrailRGB
+      {
+      R = 184
+      G = 180
+      B = 93
+      }
+    }
+  ControlPoint 15
+    {
+    ColorMapFraction = 0.7368
+    LeadRGB
+      {
+      R = 189
+      G = 170
+      B = 98
+      }
+    TrailRGB
+      {
+      R = 189
+      G = 170
+      B = 98
+      }
+    }
+  ControlPoint 16
+    {
+    ColorMapFraction = 0.7895
+    LeadRGB
+      {
+      R = 198
+      G = 165
+      B = 112
+      }
+    TrailRGB
+      {
+      R = 198
+      G = 165
+      B = 112
+      }
+    }
+  ControlPoint 17
+    {
+    ColorMapFraction = 0.8421
+    LeadRGB
+      {
+      R = 213
+      G = 176
+      B = 144
+      }
+    TrailRGB
+      {
+      R = 213
+      G = 176
+      B = 144
+      }
+    }
+  ControlPoint 18
+    {
+    ColorMapFraction = 0.8947
+    LeadRGB
+      {
+      R = 227
+      G = 194
+      B = 179
+      }
+    TrailRGB
+      {
+      R = 227
+      G = 194
+      B = 179
+      }
+    }
+  ControlPoint 19
+    {
+    ColorMapFraction = 0.9474
+    LeadRGB
+      {
+      R = 241
+      G = 221
+      B = 217
+      }
+    TrailRGB
+      {
+      R = 241
+      G = 221
+      B = 217
+      }
+    }
+  ControlPoint 20
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    }

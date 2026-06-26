@@ -1,0 +1,149 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'GrayScale - converted '
+  NumControlPoints = 9
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 0
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.125
+    LeadRGB
+      {
+      R = 32
+      G = 32
+      B = 32
+      }
+    TrailRGB
+      {
+      R = 32
+      G = 32
+      B = 32
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.25
+    LeadRGB
+      {
+      R = 64
+      G = 64
+      B = 64
+      }
+    TrailRGB
+      {
+      R = 64
+      G = 64
+      B = 64
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.375
+    LeadRGB
+      {
+      R = 96
+      G = 96
+      B = 96
+      }
+    TrailRGB
+      {
+      R = 96
+      G = 96
+      B = 96
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 128
+      G = 128
+      B = 128
+      }
+    TrailRGB
+      {
+      R = 128
+      G = 128
+      B = 128
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.625
+    LeadRGB
+      {
+      R = 160
+      G = 160
+      B = 160
+      }
+    TrailRGB
+      {
+      R = 160
+      G = 160
+      B = 160
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 0.75
+    LeadRGB
+      {
+      R = 192
+      G = 192
+      B = 192
+      }
+    TrailRGB
+      {
+      R = 192
+      G = 192
+      B = 192
+      }
+    }
+  ControlPoint 8
+    {
+    ColorMapFraction = 0.875
+    LeadRGB
+      {
+      R = 224
+      G = 224
+      B = 224
+      }
+    TrailRGB
+      {
+      R = 224
+      G = 224
+      B = 224
+      }
+    }
+  ControlPoint 9
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    }

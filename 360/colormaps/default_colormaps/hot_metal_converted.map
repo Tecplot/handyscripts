@@ -1,0 +1,85 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Hot Metal - converted '
+  NumControlPoints = 5
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 2
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 2
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.25
+    LeadRGB
+      {
+      R = 127
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 127
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 0
+      B = 0
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.75
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 0
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    }

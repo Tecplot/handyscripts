@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Diverging - Orange/Purple - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 230
+      G = 97
+      B = 1
+      }
+    TrailRGB
+      {
+      R = 230
+      G = 97
+      B = 1
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 241
+      G = 163
+      B = 64
+      }
+    TrailRGB
+      {
+      R = 241
+      G = 163
+      B = 64
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 254
+      G = 224
+      B = 182
+      }
+    TrailRGB
+      {
+      R = 254
+      G = 224
+      B = 182
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 247
+      G = 247
+      B = 247
+      }
+    TrailRGB
+      {
+      R = 247
+      G = 247
+      B = 247
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 216
+      G = 218
+      B = 235
+      }
+    TrailRGB
+      {
+      R = 216
+      G = 218
+      B = 235
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 153
+      G = 142
+      B = 195
+      }
+    TrailRGB
+      {
+      R = 153
+      G = 142
+      B = 195
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 84
+      G = 39
+      B = 136
+      }
+    TrailRGB
+      {
+      R = 84
+      G = 39
+      B = 136
+      }
+    }

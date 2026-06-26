@@ -1,0 +1,101 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Elevation - Above Ground Level - converted '
+  NumControlPoints = 6
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 0
+      G = 131
+      B = 52
+      }
+    TrailRGB
+      {
+      R = 0
+      G = 131
+      B = 52
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.2
+    LeadRGB
+      {
+      R = 51
+      G = 204
+      B = 0
+      }
+    TrailRGB
+      {
+      R = 51
+      G = 204
+      B = 0
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.4
+    LeadRGB
+      {
+      R = 244
+      G = 240
+      B = 112
+      }
+    TrailRGB
+      {
+      R = 244
+      G = 240
+      B = 112
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.6
+    LeadRGB
+      {
+      R = 244
+      G = 189
+      B = 69
+      }
+    TrailRGB
+      {
+      R = 244
+      G = 189
+      B = 69
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.8
+    LeadRGB
+      {
+      R = 153
+      G = 100
+      B = 42
+      }
+    TrailRGB
+      {
+      R = 153
+      G = 100
+      B = 42
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 255
+      }
+    }

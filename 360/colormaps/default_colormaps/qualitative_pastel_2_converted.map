@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Qualitative - Pastel 2 - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 102
+      G = 194
+      B = 165
+      }
+    TrailRGB
+      {
+      R = 102
+      G = 194
+      B = 165
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 252
+      G = 141
+      B = 98
+      }
+    TrailRGB
+      {
+      R = 252
+      G = 141
+      B = 98
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 141
+      G = 160
+      B = 203
+      }
+    TrailRGB
+      {
+      R = 141
+      G = 160
+      B = 203
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 231
+      G = 138
+      B = 195
+      }
+    TrailRGB
+      {
+      R = 231
+      G = 138
+      B = 195
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 166
+      G = 216
+      B = 84
+      }
+    TrailRGB
+      {
+      R = 166
+      G = 216
+      B = 84
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 255
+      G = 217
+      B = 47
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 217
+      B = 47
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 229
+      G = 196
+      B = 148
+      }
+    TrailRGB
+      {
+      R = 229
+      G = 196
+      B = 148
+      }
+    }

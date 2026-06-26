@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Qualitative - Paired - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 166
+      G = 206
+      B = 227
+      }
+    TrailRGB
+      {
+      R = 166
+      G = 206
+      B = 227
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 31
+      G = 120
+      B = 180
+      }
+    TrailRGB
+      {
+      R = 31
+      G = 120
+      B = 180
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 178
+      G = 223
+      B = 138
+      }
+    TrailRGB
+      {
+      R = 178
+      G = 223
+      B = 138
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 51
+      G = 160
+      B = 44
+      }
+    TrailRGB
+      {
+      R = 51
+      G = 160
+      B = 44
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 251
+      G = 154
+      B = 153
+      }
+    TrailRGB
+      {
+      R = 251
+      G = 154
+      B = 153
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 227
+      G = 26
+      B = 28
+      }
+    TrailRGB
+      {
+      R = 227
+      G = 26
+      B = 28
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 253
+      G = 191
+      B = 111
+      }
+    TrailRGB
+      {
+      R = 253
+      G = 191
+      B = 111
+      }
+    }

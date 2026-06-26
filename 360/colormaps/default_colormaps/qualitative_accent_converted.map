@@ -1,0 +1,117 @@
+#!MC 1410
+
+$!CreateColorMap 
+  Name = 'Qualitative - Accent - converted '
+  NumControlPoints = 7
+  ControlPoint 1
+    {
+    ColorMapFraction = 0
+    LeadRGB
+      {
+      R = 127
+      G = 201
+      B = 127
+      }
+    TrailRGB
+      {
+      R = 127
+      G = 201
+      B = 127
+      }
+    }
+  ControlPoint 2
+    {
+    ColorMapFraction = 0.1667
+    LeadRGB
+      {
+      R = 190
+      G = 174
+      B = 212
+      }
+    TrailRGB
+      {
+      R = 190
+      G = 174
+      B = 212
+      }
+    }
+  ControlPoint 3
+    {
+    ColorMapFraction = 0.3333
+    LeadRGB
+      {
+      R = 253
+      G = 192
+      B = 134
+      }
+    TrailRGB
+      {
+      R = 253
+      G = 192
+      B = 134
+      }
+    }
+  ControlPoint 4
+    {
+    ColorMapFraction = 0.5
+    LeadRGB
+      {
+      R = 255
+      G = 255
+      B = 153
+      }
+    TrailRGB
+      {
+      R = 255
+      G = 255
+      B = 153
+      }
+    }
+  ControlPoint 5
+    {
+    ColorMapFraction = 0.6667
+    LeadRGB
+      {
+      R = 56
+      G = 108
+      B = 176
+      }
+    TrailRGB
+      {
+      R = 56
+      G = 108
+      B = 176
+      }
+    }
+  ControlPoint 6
+    {
+    ColorMapFraction = 0.8333
+    LeadRGB
+      {
+      R = 240
+      G = 2
+      B = 127
+      }
+    TrailRGB
+      {
+      R = 240
+      G = 2
+      B = 127
+      }
+    }
+  ControlPoint 7
+    {
+    ColorMapFraction = 1
+    LeadRGB
+      {
+      R = 191
+      G = 91
+      B = 23
+      }
+    TrailRGB
+      {
+      R = 191
+      G = 91
+      B = 23
+      }
+    }
