@@ -49,13 +49,13 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "inputs",
-        nargs="+",
-        help="One or more Fluent .msh files.",
+        nargs="*",
+        help="Fluent .msh files. Defaults to all .msh files in the current directory.",
     )
     parser.add_argument(
-        "--connect",
+        "-c",
         action="store_true",
-        help="Connect to a running Tecplot 360 session instead of batch mode.",
+        help="Connect to a running Tecplot 360 session.",
     )
     return parser.parse_args(argv)
 
@@ -388,10 +388,15 @@ def main(argv=None):
     args = parse_args(argv)
     failures = 0
 
-    if args.connect:
+    if args.c:
         tp.session.connect()
 
-    for input_name in args.inputs:
+    input_names = args.inputs or sorted(str(path) for path in Path.cwd().glob("*.msh"))
+    if not input_names:
+        print("No .msh files found in the current directory.", file=sys.stderr)
+        return 1
+
+    for input_name in input_names:
         try:
             input_path = Path(input_name).expanduser()
             if not (input_path.is_file() and input_path.suffix.lower() == ".msh"):
