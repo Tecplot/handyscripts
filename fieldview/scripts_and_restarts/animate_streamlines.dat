@@ -1,0 +1,32 @@
+data_file_restart_version: 20
+format_type: 1
+data_format: 3
+multi-grid: 0
+iblanks: 0
+data_type: 1
+filename: ./bluntfinx.bin
+transient_set: 0
+dimensions: 3
+time_series: 0
+num_grids: 1
+grid_inc: 1
+grid_sel_flag: 1
+dataset_zoom: 1.000000
+dataset_loc: 0.000000 0.000000 0.000000
+dataset_angle_axis: 0.000000 0.000000 0.000000 1.000000
+dataset_scale: 1.000000 1.000000 1.000000
+dataset_rotate1: 4 0.000000
+dataset_rotate2: 5 0.000000
+dataset_rotate3: 6 0.000000
+dataset_translate: 0.000000 0.000000 0.000000
+dataset_dup_mode: 1
+dataset_num_regions: 0
+format_type: 1
+data_format: 3
+multi-grid: 0
+iblanks: 0
+data_type: 2
+filename: ./bluntfinq.bin
+transient_set: 0
+dimensions: 3
+time_series: 0

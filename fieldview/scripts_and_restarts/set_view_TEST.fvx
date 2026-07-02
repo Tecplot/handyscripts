@@ -1,5 +1,5 @@
 ------------------------------------------------------------------
---  Copyright (c) 2025 Tecplot, Inc.                            --
+--  Copyright (c) 2026 Tecplot, Inc.                            --
 --  All rights reserved.                                                      --
 --                                                                            --
 -- This sample FVX script is not supported by Tecplot, Inc.     --
@@ -11,7 +11,7 @@
 --                                                              --
 ------------------------------------------------------------------
 
-dofile(FV_HOME .. "/fvx_and_restarts/set_view.fvx")
+dofile(FV_HOME .. "/scripts_and_restarts/set_view.fvx")
 
 data_input_table = {
 	data_format	=	"plot3d",
